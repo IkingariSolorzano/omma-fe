@@ -1,0 +1,190 @@
+<!-- Hero Carousel -->
+<div class="hero-carousel relative w-full h-screen overflow-hidden">
+  <!-- Carousel Container -->
+  <div class="carousel-wrapper relative w-full h-full">
+    <div
+      class="carousel-slides flex transition-transform duration-500 ease-in-out h-full"
+      [style.transform]="'translateX(-' + (currentSlide * 100) + '%)'"
+    >
+      <!-- Slide 1 - Reception -->
+      <div class="carousel-slide w-full h-full flex-shrink-0 relative">
+        <img
+          src="images/fotos/recepcion.jpg"
+          alt="Recepción OMMA Consultorios"
+          class="w-full h-full object-cover"
+        />
+        <div class="absolute inset-0 flex items-center justify-center">
+          <!-- Diagonal overlay covering half width - less inclined -->
+          <div class="absolute inset-0 bg-black opacity-50" style="clip-path: polygon(0 0, 40% 0, 50% 100%, 0 100%);"></div>
+
+          <!-- Content container positioned within overlay triangle -->
+          <div class="absolute inset-0 flex items-center justify-start pl-20 pr-4">
+            <div class="relative z-10 text-left text-white max-w-md">
+              <h1 class="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">Bienvenido a OMMA</h1>
+              <p class="text-lg md:text-xl mb-6 drop-shadow-md">Consultorios especializados en salud y bienestar</p>
+              <div class="flex flex-col gap-3">
+                <button [routerLink]="['nosotros']" style="background-color: #748E9B;" class="hover:opacity-90 text-white px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                  Conoce Más
+                </button>
+                <button [routerLink]="['spaces']" style="background-color: #FDBC59; color: #333;" class="hover:opacity-90 px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                  Ver Espacios
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 2 - Main Consulting Room -->
+      <div class="carousel-slide w-full h-full flex-shrink-0 relative">
+        <img
+          src="images/fotos/consultorio_principal.jpg"
+          alt="Consultorio Principal OMMA"
+          class="w-full h-full object-cover"
+        />
+        <div class="absolute inset-0 flex items-center justify-center">
+          <!-- Diagonal overlay covering half width - less inclined -->
+          <div class="absolute inset-0 bg-black opacity-50" style="clip-path: polygon(0 0, 40% 0, 50% 100%, 0 100%);"></div>
+
+          <!-- Content container positioned within overlay triangle -->
+          <div class="absolute inset-0 flex items-center justify-start pl-20 pr-4">
+            <div class="relative z-10 text-left text-white max-w-md">
+              <h1 class="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">Espacios Profesionales</h1>
+              <p class="text-lg md:text-xl mb-6 drop-shadow-md">Entornos diseñados para el cuidado y la confianza</p>
+              <div class="flex flex-col gap-3">
+                <button routerLink="/spaces" style="background-color: #748E9B;" class="hover:opacity-90 text-white px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                  Ver Espacios
+                </button>
+                <button routerLink="/services" style="background-color: #FDBC59; color: #333;" class="hover:opacity-90 px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                  Nuestros Servicios
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 3 - Children's Consulting Room -->
+      <div class="carousel-slide w-full h-full flex-shrink-0 relative">
+        <img
+          src="images/fotos/consultorio_infantil.jpg"
+          alt="Consultorio Infantil OMMA"
+          class="w-full h-full object-cover"
+        />
+        <div class="absolute inset-0 flex items-center justify-center">
+          <!-- Diagonal overlay covering half width - less inclined -->
+          <div class="absolute inset-0 bg-black opacity-50" style="clip-path: polygon(0 0, 40% 0, 50% 100%, 0 100%);"></div>
+
+          <!-- Content container positioned within overlay triangle -->
+          <div class="absolute inset-0 flex items-center justify-start pl-20 pr-4">
+            <div class="relative z-10 text-left text-white max-w-md">
+              <h1 class="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">Atención Especializada</h1>
+              <p class="text-lg md:text-xl mb-6 drop-shadow-md">Psicoterapia, terapia familiar y servicios infantiles</p>
+              <div class="flex flex-col gap-3">
+                <button routerLink="/services" style="background-color: #748E9B;" class="hover:opacity-90 text-white px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                  Servicios
+                </button>
+                <button routerLink="/contact" style="background-color: #FDBC59; color: #333;" class="hover:opacity-90 px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                  Contactar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 4 - Kitchen Area -->
+      <div class="carousel-slide w-full h-full flex-shrink-0 relative">
+        <img
+          src="images/fotos/cocina.jpg"
+          alt="Área de Cocina OMMA"
+          class="w-full h-full object-cover"
+        />
+        <div class="absolute inset-0 flex items-center justify-center">
+          <!-- Diagonal overlay covering half width - less inclined -->
+          <div class="absolute inset-0 bg-black opacity-50" style="clip-path: polygon(0 0, 40% 0, 50% 100%, 0 100%);"></div>
+
+          <!-- Content container positioned within overlay triangle -->
+          <div class="absolute inset-0 flex items-center justify-start pl-20 pr-4">
+            <div class="relative z-10 text-left text-white max-w-md">
+              <h1 class="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">Comodidad Total</h1>
+              <p class="text-lg md:text-xl mb-6 drop-shadow-md">Instalaciones completas para terapeutas y pacientes</p>
+              <div class="flex flex-col gap-3">
+                <button routerLink="/services" style="background-color: #748E9B;" class="hover:opacity-90 text-white px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                  Servicios Completos
+                </button>
+                <button routerLink="/pricing" style="background-color: #FDBC59; color: #333;" class="hover:opacity-90 px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                  Ver Precios
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 5 - Entrance -->
+      <div class="carousel-slide w-full h-full flex-shrink-0 relative">
+        <img
+          src="images/fotos/entrada.jpg"
+          alt="Entrada OMMA Consultorios"
+          class="w-full h-full object-cover"
+        />
+        <div class="absolute inset-0 flex items-center justify-center">
+          <!-- Diagonal overlay covering half width - less inclined -->
+          <div class="absolute inset-0 bg-black opacity-50" style="clip-path: polygon(0 0, 40% 0, 50% 100%, 0 100%);"></div>
+
+          <!-- Content container positioned within overlay triangle -->
+          <div class="absolute inset-0 flex items-center justify-start pl-20 pr-4">
+            <div class="relative z-10 text-left text-white max-w-md">
+              <h1 class="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">Tu Espacio Seguro</h1>
+              <p class="text-lg md:text-xl mb-6 drop-shadow-md">Privacidad y tranquilidad garantizadas</p>
+              <div class="flex flex-col gap-3">
+                <button routerLink="/contact" style="background-color: #748E9B;" class="hover:opacity-90 text-white px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                  Reservar Cita
+                </button>
+                <button routerLink="/pricing" style="background-color: #FDBC59; color: #333;" class="hover:opacity-90 px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                  Ver Tarifas
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation Arrows -->
+  <button
+    (click)="prevSlide()"
+    class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all duration-300 z-10"
+    aria-label="Slide anterior"
+  >
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+    </svg>
+  </button>
+
+  <button
+    (click)="nextSlide()"
+    class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all duration-300 z-10"
+    aria-label="Siguiente slide"
+  >
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+    </svg>
+  </button>
+
+  <!-- Indicators -->
+  <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3 z-10">
+    <button
+      *ngFor="let slide of slides; let i = index"
+      (click)="goToSlide(i)"
+      [class.active]="i === currentSlide"
+      class="w-3 h-3 rounded-full border-2 border-white transition-all duration-300"
+      [class.bg-white]="i === currentSlide"
+      [class.bg-transparent]="i !== currentSlide"
+      [attr.aria-label]="'Ir al slide ' + (i + 1)"
+    ></button>
+  </div>
+</div>
+<!-- End Hero Carousel -->
