@@ -1,0 +1,64 @@
+/* Floating WhatsApp Button Styles */
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-clamp: 2; /* Standard property for future compatibility */
+}
+
+/* Menu animation */
+.menu-enter {
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+}
+
+.menu-enter-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: all 0.3s ease-out;
+}
+
+.menu-exit {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.menu-exit-active {
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+  transition: all 0.2s ease-in;
+}
+
+/* Pulse animation for notification badge */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Hover effects */
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+  .fixed.bottom-6.right-6 {
+    bottom: 1rem;
+    right: 1rem;
+  }
+
+  .min-w-64 {
+    min-width: 18rem;
+  }
+}

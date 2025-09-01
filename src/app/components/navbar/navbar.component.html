@@ -1,16 +1,99 @@
 <!-- Navbar -->
-<nav class="bg-gray-800 text-white p-4">
-  <div class="container mx-auto flex justify-between">
-    <img src="images/omma-logo-dark.png" alt="OMMA-LOGO" class="h-16" />
+<nav class="bg-gray-800 text-white shadow-lg sticky top-0 z-50">
+  <div class="container mx-auto px-4">
+    <div class="flex justify-between items-center py-4">
+      <!-- Logo -->
+      <div class="flex items-center">
+        <img src="images/omma-logo-dark.png" alt="OMMA-LOGO" class="h-12 w-auto" />
+      </div>
 
-    <ul class="flex space-x-4 items-center">
-      <li><a routerLink="/" class="hover:underline">Inicio</a></li>
-      <li><a routerLink="/nosotros" class="hover:underline">Nosotros</a></li>
-      <li><a routerLink="/services" class="hover:underline">Servicios</a></li>
-      <li><a routerLink="/spaces" class="hover:underline">Espacios</a></li>
-      <li><a routerLink="/pricing" class="hover:underline">Precios</a></li>
-      <li><a routerLink="/contact" class="hover:underline">Contacto</a></li>
-    </ul>
+      <!-- Desktop Menu -->
+      <div class="hidden md:flex items-center space-x-8">
+        <a routerLink="/" class="hover:text-blue-400 transition-colors duration-200">Inicio</a>
+        <a routerLink="/nosotros" class="hover:text-blue-400 transition-colors duration-200">Nosotros</a>
+        <a routerLink="/services" class="hover:text-blue-400 transition-colors duration-200">Servicios</a>
+        <a routerLink="/spaces" class="hover:text-blue-400 transition-colors duration-200">Espacios</a>
+        <a routerLink="/pricing" class="hover:text-blue-400 transition-colors duration-200">Precios</a>
+        <a routerLink="/contact" class="hover:text-blue-400 transition-colors duration-200">Contacto</a>
+      </div>
+
+      <!-- Mobile Menu Button -->
+      <div class="md:hidden">
+        <button
+          (click)="toggleMobileMenu()"
+          class="text-white hover:text-blue-400 focus:outline-none focus:text-blue-400 transition-colors duration-200"
+          aria-label="Toggle mobile menu"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              *ngIf="!isMobileMenuOpen"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            ></path>
+            <path
+              *ngIf="isMobileMenuOpen"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            ></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div
+      *ngIf="isMobileMenuOpen"
+      class="md:hidden border-t border-gray-700 py-4"
+    >
+      <div class="flex flex-col space-y-4">
+        <a
+          routerLink="/"
+          (click)="closeMobileMenu()"
+          class="hover:text-blue-400 transition-colors duration-200 py-2"
+        >
+          Inicio
+        </a>
+        <a
+          routerLink="/nosotros"
+          (click)="closeMobileMenu()"
+          class="hover:text-blue-400 transition-colors duration-200 py-2"
+        >
+          Nosotros
+        </a>
+        <a
+          routerLink="/services"
+          (click)="closeMobileMenu()"
+          class="hover:text-blue-400 transition-colors duration-200 py-2"
+        >
+          Servicios
+        </a>
+        <a
+          routerLink="/spaces"
+          (click)="closeMobileMenu()"
+          class="hover:text-blue-400 transition-colors duration-200 py-2"
+        >
+          Espacios
+        </a>
+        <a
+          routerLink="/pricing"
+          (click)="closeMobileMenu()"
+          class="hover:text-blue-400 transition-colors duration-200 py-2"
+        >
+          Precios
+        </a>
+        <a
+          routerLink="/contact"
+          (click)="closeMobileMenu()"
+          class="hover:text-blue-400 transition-colors duration-200 py-2"
+        >
+          Contacto
+        </a>
+      </div>
+    </div>
   </div>
 </nav>
 <!-- End Navbar -->

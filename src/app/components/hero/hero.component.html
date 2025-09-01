@@ -1,7 +1,7 @@
 <!-- Hero Carousel -->
 <div class="hero-carousel relative w-full h-screen overflow-hidden">
   <!-- Carousel Container -->
-  <div class="carousel-wrapper relative w-full h-full">
+  <div class="carousel-wrapper relative w-full h-full" #carouselContainer>
     <div
       class="carousel-slides flex transition-transform duration-500 ease-in-out h-full"
       [style.transform]="'translateX(-' + (currentSlide * 100) + '%)'"
@@ -52,10 +52,10 @@
               <h1 class="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">Espacios Profesionales</h1>
               <p class="text-lg md:text-xl mb-6 drop-shadow-md">Entornos diseñados para el cuidado y la confianza</p>
               <div class="flex flex-col gap-3">
-                <button routerLink="/spaces" style="background-color: #748E9B;" class="hover:opacity-90 text-white px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                <button [routerLink]="['spaces']" style="background-color: #748E9B;" class="hover:opacity-90 text-white px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
                   Ver Espacios
                 </button>
-                <button routerLink="/services" style="background-color: #FDBC59; color: #333;" class="hover:opacity-90 px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                <button [routerLink]="['services']" style="background-color: #FDBC59; color: #333;" class="hover:opacity-90 px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
                   Nuestros Servicios
                 </button>
               </div>
@@ -81,10 +81,10 @@
               <h1 class="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">Atención Especializada</h1>
               <p class="text-lg md:text-xl mb-6 drop-shadow-md">Psicoterapia, terapia familiar y servicios infantiles</p>
               <div class="flex flex-col gap-3">
-                <button routerLink="/services" style="background-color: #748E9B;" class="hover:opacity-90 text-white px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                <button [routerLink]="['services']" style="background-color: #748E9B;" class="hover:opacity-90 text-white px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
                   Servicios
                 </button>
-                <button routerLink="/contact" style="background-color: #FDBC59; color: #333;" class="hover:opacity-90 px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                <button [routerLink]="['contact']" style="background-color: #FDBC59; color: #333;" class="hover:opacity-90 px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
                   Contactar
                 </button>
               </div>
@@ -110,10 +110,10 @@
               <h1 class="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">Comodidad Total</h1>
               <p class="text-lg md:text-xl mb-6 drop-shadow-md">Instalaciones completas para terapeutas y pacientes</p>
               <div class="flex flex-col gap-3">
-                <button routerLink="/services" style="background-color: #748E9B;" class="hover:opacity-90 text-white px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                <button [routerLink]="['services']" style="background-color: #748E9B;" class="hover:opacity-90 text-white px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
                   Servicios Completos
                 </button>
-                <button routerLink="/pricing" style="background-color: #FDBC59; color: #333;" class="hover:opacity-90 px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                <button [routerLink]="['pricing']" style="background-color: #FDBC59; color: #333;" class="hover:opacity-90 px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
                   Ver Precios
                 </button>
               </div>
@@ -139,10 +139,10 @@
               <h1 class="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">Tu Espacio Seguro</h1>
               <p class="text-lg md:text-xl mb-6 drop-shadow-md">Privacidad y tranquilidad garantizadas</p>
               <div class="flex flex-col gap-3">
-                <button routerLink="/contact" style="background-color: #748E9B;" class="hover:opacity-90 text-white px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                <button [routerLink]="['contact']" style="background-color: #748E9B;" class="hover:opacity-90 text-white px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
                   Reservar Cita
                 </button>
-                <button routerLink="/pricing" style="background-color: #FDBC59; color: #333;" class="hover:opacity-90 px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                <button [routerLink]="['pricing']" style="background-color: #FDBC59; color: #333;" class="hover:opacity-90 px-6 py-2 rounded-lg text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
                   Ver Tarifas
                 </button>
               </div>
