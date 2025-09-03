@@ -1,0 +1,329 @@
+<!-- Space Booking Content -->
+<div class="mb-6">
+  <h2 class="text-2xl font-bold text-gray-900">Reservar Espacio</h2>
+</div>
+
+<!-- Success/Error Messages -->
+<div *ngIf="success" class="mb-4 bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md">
+  {{ success }}
+</div>
+
+<div *ngIf="error" class="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+  {{ error }}
+</div>
+
+<!-- Credits Warning -->
+<div *ngIf="credits && credits.active < 10" class="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4">
+  <div class="flex">
+    <div class="flex-shrink-0">
+      <svg class="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+      </svg>
+    </div>
+    <div class="ml-3">
+      <p class="text-sm text-yellow-700">
+        <strong>Créditos insuficientes:</strong> Tienes {{ credits.active || 0 }} créditos. 
+        Necesitas al menos 10 créditos para reservar un espacio. Contacta al administrador.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Credits Info -->
+<div class="mb-6 bg-white shadow rounded-lg">
+  <div class="px-4 py-5 sm:p-6">
+    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Mis Créditos</h3>
+    
+    <div *ngIf="credits" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="text-center">
+        <div class="text-2xl font-bold text-green-600">{{ credits.active }}</div>
+        <div class="text-sm text-gray-500">Créditos Activos</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-bold text-blue-600">{{ (credits.active / 10) | number:'1.1-1' }}</div>
+        <div class="text-sm text-gray-500">Horas Disponibles</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-bold text-red-600">{{ credits.expired }}</div>
+        <div class="text-sm text-gray-500">Créditos Expirados</div>
+      </div>
+    </div>
+
+    <div *ngIf="!credits" class="text-center py-4 text-gray-500">
+      Cargando información de créditos...
+    </div>
+  </div>
+</div>
+
+<!-- Calendar View -->
+<div *ngIf="!showDayView" class="bg-white shadow rounded-lg">
+  <div class="px-4 py-5 sm:p-6">
+    <!-- Calendar Header -->
+    <div class="flex items-center justify-between mb-6">
+      <button (click)="previousMonth()" 
+              class="p-2 hover:bg-gray-100 rounded-md"
+              title="Mes anterior">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+      </button>
+      <h3 class="text-lg font-medium text-gray-900">{{ getMonthName() }} {{ currentDate.getFullYear() }}</h3>
+      <button (click)="nextMonth()" 
+              class="p-2 hover:bg-gray-100 rounded-md"
+              title="Mes siguiente">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div class="grid grid-cols-7 gap-1 mb-2">
+      <div class="text-center text-sm font-medium text-gray-500 py-2">Dom</div>
+      <div class="text-center text-sm font-medium text-gray-500 py-2">Lun</div>
+      <div class="text-center text-sm font-medium text-gray-500 py-2">Mar</div>
+      <div class="text-center text-sm font-medium text-gray-500 py-2">Mié</div>
+      <div class="text-center text-sm font-medium text-gray-500 py-2">Jue</div>
+      <div class="text-center text-sm font-medium text-gray-500 py-2">Vie</div>
+      <div class="text-center text-sm font-medium text-gray-500 py-2">Sáb</div>
+    </div>
+
+    <div class="grid grid-cols-7 gap-1">
+      <button *ngFor="let day of calendarDays" 
+              (click)="selectDate(day)"
+              [disabled]="!day.isActive"
+              class="h-12 text-sm rounded-md transition-colors"
+              [ngClass]="{
+                'bg-gray-100': !day.isCurrentMonth,
+                'text-gray-400': !day.isCurrentMonth,
+                'cursor-not-allowed': !day.isActive,
+                'opacity-50': !day.isActive,
+                'bg-blue-500 text-white': day.isSelected,
+                'bg-white': day.isCurrentMonth && !day.isSelected,
+                'border-2 border-blue-500': day.isToday && !day.isSelected,
+                'day-with-my-reservation': day.hasMyReservation,
+                'bg-green-50 text-green-700 cursor-pointer': day.isActive && !day.isSelected && !day.isToday,
+                'bg-gray-100 text-gray-400 cursor-not-allowed': !day.isActive
+              }">
+        {{ day.day }}
+      </button>
+    </div>
+
+    <!-- Legend -->
+    <div class="mt-4 flex flex-wrap gap-4 text-sm">
+      <div class="flex items-center">
+        <div class="w-3 h-3 bg-green-50 border border-green-200 rounded mr-2"></div>
+        <span class="text-gray-600">Disponible</span>
+      </div>
+      <div class="flex items-center">
+        <div class="w-3 h-3 bg-blue-100 border border-blue-200 rounded mr-2"></div>
+        <span class="text-gray-600">Hoy</span>
+      </div>
+      <div class="flex items-center">
+        <div class="w-3 h-3 bg-gray-100 border border-gray-300 rounded mr-2"></div>
+        <span class="text-gray-600">No disponible</span>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Day View -->
+<div *ngIf="showDayView" class="grid grid-cols-12 gap-6">
+
+  <!-- Left Column: Hourly Schedule -->
+  <div class="col-span-12 lg:col-span-9 bg-white shadow rounded-lg">
+    <div class="px-4 py-5 sm:p-6">
+      <!-- Day View Header -->
+      <div class="flex items-center justify-between mb-6">
+        <button (click)="backToCalendar()" 
+                class="flex items-center text-gray-600 hover:text-gray-900"
+                title="Volver al calendario">
+          <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+          Volver al calendario
+        </button>
+        <h3 class="text-lg font-medium text-gray-900">
+          {{ formatSelectedDate() }}
+        </h3>
+        <div></div> <!-- Spacer -->
+      </div>
+
+      <!-- Space Headers -->
+      <div class="grid gap-2 mb-4" [style.grid-template-columns]="'120px repeat(' + spaces.length + ', 1fr)'">
+        <div class="text-sm font-medium text-gray-700 py-2">Horario</div>
+        <div *ngFor="let space of spaces" class="text-center text-sm font-medium text-gray-700 py-2 border rounded-md bg-gray-50">
+          {{ space.name }}
+          <div class="text-xs text-gray-500">{{ space.cost_credits }} créditos</div>
+        </div>
+      </div>
+
+      <!-- Hour Slots Grid -->
+      <div class="space-y-1">
+        <div *ngFor="let hourSlot of dayViewHours" 
+             class="grid gap-2" 
+             [style.grid-template-columns]="'120px repeat(' + spaces.length + ', 1fr)'">
+          <!-- Time Label -->
+          <div class="text-sm text-gray-600 py-3 px-2 border-r">
+            {{ hourSlot.timeLabel }}
+          </div>
+          
+          <!-- Space Slots -->
+          <button *ngFor="let spaceSlot of hourSlot.spaces"
+                  (click)="selectHourSpace(hourSlot, spaceSlot)"
+                  [disabled]="!spaceSlot.isAvailable"
+                  class="py-3 px-2 text-sm border rounded-md transition-colors"
+                  [ngClass]="getSpaceSlotClass(spaceSlot)">
+            <span *ngIf="spaceSlot.isAvailable && !spaceSlot.isSelected && !spaceSlot.requiresSpecialApproval">Disponible</span>
+            <span *ngIf="spaceSlot.isAvailable && !spaceSlot.isSelected && spaceSlot.requiresSpecialApproval" class="text-orange-700">
+              <div class="text-xs">Solicitud</div>
+              <div class="text-xs">Especial</div>
+            </span>
+            <span *ngIf="spaceSlot.isSelected" class="font-medium">Seleccionado</span>
+            <span *ngIf="!spaceSlot.isAvailable">No disponible</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Regular Booking Confirmation -->
+      <div *ngIf="showBookingConfirmation && selectedHourSlot && selectedSpaceSlot" class="mt-6 p-4 bg-blue-50 rounded-lg">
+        <h4 class="text-lg font-medium text-blue-900 mb-2">Confirmar Reservación</h4>
+        <div class="space-y-2 text-sm text-blue-700">
+          <p><strong>Espacio:</strong> {{ selectedSpaceSlot.space.name }}</p>
+          <p><strong>Fecha:</strong> {{ formatSelectedDate() }}</p>
+          <p><strong>Hora:</strong> {{ selectedHourSlot.timeLabel }}</p>
+          <p><strong>Costo:</strong> {{ selectedSpaceSlot.space.cost_credits }} créditos</p>
+        </div>
+        
+        <div class="mt-4 flex space-x-3">
+          <button (click)="confirmBooking()" 
+                  [disabled]="loading || !hasEnoughCredits()"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
+            <span *ngIf="!loading">Confirmar Reservación</span>
+            <span *ngIf="loading">Procesando...</span>
+          </button>
+          <button (click)="cancelBooking()" 
+                  class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+            Cancelar
+          </button>
+        </div>
+        
+        <div *ngIf="!hasEnoughCredits()" class="mt-3 text-sm text-red-600">
+          No tienes suficientes créditos para esta reservación.
+        </div>
+      </div>
+
+      <!-- Special Request Confirmation -->
+      <div *ngIf="showSpecialRequestConfirmation && selectedHourSlot && selectedSpaceSlot" class="mt-6 p-4 bg-orange-50 rounded-lg border border-orange-200">
+        <h4 class="text-lg font-medium text-orange-900 mb-2">
+          <svg class="inline h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+          </svg>
+          Solicitud de Reserva Especial
+        </h4>
+        <div class="space-y-2 text-sm text-orange-700">
+          <p><strong>Espacio:</strong> {{ selectedSpaceSlot.space.name }}</p>
+          <p><strong>Fecha:</strong> {{ formatSelectedDate() }}</p>
+          <p><strong>Hora:</strong> {{ selectedHourSlot.timeLabel }}</p>
+          <p><strong>Costo base:</strong> {{ selectedSpaceSlot.space.cost_credits }} créditos</p>
+          <p><strong>Recargo especial:</strong> +1 crédito</p>
+          <p class="font-semibold"><strong>Total:</strong> {{ selectedSpaceSlot.space.cost_credits + 1 }} créditos</p>
+        </div>
+        
+        <div class="mt-3 p-3 bg-orange-100 rounded-md">
+          <p class="text-sm text-orange-800">
+            <strong>⚠️ Horario fuera del horario comercial:</strong><br>
+            Esta reserva requiere aprobación del administrador. Los créditos se descontarán solo si la reserva es aprobada.
+          </p>
+        </div>
+        
+        <div class="mt-4 flex space-x-3">
+          <button (click)="confirmSpecialRequest()" 
+                  [disabled]="loading"
+                  class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50">
+            <span *ngIf="!loading">Enviar Solicitud</span>
+            <span *ngIf="loading">Enviando...</span>
+          </button>
+          <button (click)="cancelBooking()" 
+                  class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Reservations for the Day -->
+  <div class="col-span-12 lg:col-span-3">
+    <div class="bg-white shadow rounded-lg p-4 sticky top-4">
+      <h3 class="text-lg font-semibold text-gray-800 mb-3">Reservas del Día</h3>
+      
+      <!-- Detailed view of a single selected reservation -->
+      <div *ngIf="selectedReservationForDetail">
+        <button (click)="selectedReservationForDetail = null" class="text-sm text-blue-600 hover:underline mb-3 flex items-center">
+          <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+          Volver a la lista
+        </button>
+        
+        <div class="bg-white rounded-lg shadow-sm border p-3" [ngClass]="{
+          'border-green-300': selectedReservationForDetail.status === 'confirmed',
+          'border-red-300': selectedReservationForDetail.status === 'cancelled',
+          'border-yellow-300': selectedReservationForDetail.status === 'pending'}">
+          
+          <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                [ngClass]="{
+                  'bg-green-100 text-green-800': selectedReservationForDetail.status === 'confirmed',
+                  'bg-yellow-100 text-yellow-800': selectedReservationForDetail.status === 'pending',
+                  'bg-red-100 text-red-800': selectedReservationForDetail.status === 'cancelled'}">
+            {{ translateStatus(selectedReservationForDetail.status) }}
+          </span>
+
+          <div class="mt-3 text-sm text-gray-700 space-y-1">
+            <p><strong>Espacio:</strong> {{ selectedReservationForDetail.space_name }}</p>
+            <p><strong>Costo:</strong> {{ selectedReservationForDetail.cost_credits }} créditos</p>
+            <p><strong>Inicio:</strong> {{ selectedReservationForDetail.start_time | date:'h:mm a' }}</p>
+            <p><strong>Fin:</strong> {{ selectedReservationForDetail.end_time | date:'h:mm a' }}</p>
+          </div>
+
+          <button *ngIf="getReservationCancellationState(selectedReservationForDetail).canCancel" 
+                  (click)="cancelReservation(selectedReservationForDetail)" [disabled]="loading"
+                  class="mt-4 w-full px-3 py-2 text-sm font-medium rounded-md transition-colors text-white"
+                  [ngClass]="{
+                    'bg-red-600 hover:bg-red-700': getReservationCancellationState(selectedReservationForDetail).hasPenalty,
+                    'bg-yellow-500 hover:bg-yellow-600': !getReservationCancellationState(selectedReservationForDetail).hasPenalty
+                  }">
+            Cancelar
+          </button>
+        </div>
+      </div>
+
+      <!-- Compact list of reservations -->
+      <div *ngIf="!selectedReservationForDetail">
+        <ul *ngIf="selectedDayReservations.length > 0; else noReservations" class="space-y-2">
+          <li *ngFor="let reservation of selectedDayReservations" 
+              (click)="selectReservationForDetail(reservation)"
+              class="p-3 rounded-md cursor-pointer hover:bg-gray-100 border"
+              [ngClass]="{
+                'border-green-300': reservation.status === 'confirmed',
+                'border-red-300': reservation.status === 'cancelled',
+                'border-yellow-300': reservation.status === 'pending'}">
+            <div class="flex justify-between items-center">
+              <div class="font-semibold text-sm text-gray-800">{{ reservation.space_name }}</div>
+              <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                    [ngClass]="{
+                      'bg-green-100 text-green-800': reservation.status === 'confirmed',
+                      'bg-yellow-100 text-yellow-800': reservation.status === 'pending',
+                      'bg-red-100 text-red-800': reservation.status === 'cancelled'
+                    }">
+                {{ translateStatus(reservation.status) }}
+              </span>
+            </div>
+            <div class="text-xs text-gray-600 mt-1">{{ reservation.start_time | date:'h:mm a' }} - {{ reservation.end_time | date:'h:mm a' }}</div>
+          </li>
+        </ul>
+        <ng-template #noReservations>
+          <p class="text-sm text-gray-500">No tienes reservas para este día.</p>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</div>

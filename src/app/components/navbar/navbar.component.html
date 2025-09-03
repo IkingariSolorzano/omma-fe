@@ -14,7 +14,27 @@
         <a routerLink="/services" class="hover:text-blue-400 transition-colors duration-200">Servicios</a>
         <a routerLink="/spaces" class="hover:text-blue-400 transition-colors duration-200">Espacios</a>
         <a routerLink="/pricing" class="hover:text-blue-400 transition-colors duration-200">Precios</a>
+        <a routerLink="/professionals" class="hover:text-blue-400 transition-colors duration-200">Profesionales</a>
         <a routerLink="/contact" class="hover:text-blue-400 transition-colors duration-200">Contacto</a>
+        
+        <!-- Authentication Links -->
+        <div *ngIf="!isAuthenticated" class="flex items-center space-x-4">
+          <a routerLink="/login" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+            Iniciar Sesión
+          </a>
+        </div>
+        
+        <div *ngIf="isAuthenticated" class="flex items-center space-x-4">
+          <a [routerLink]="currentUser?.role === 'admin' ? '/admin' : '/dashboard'" 
+             class="hover:text-blue-400 transition-colors duration-200">
+            {{ currentUser?.role === 'admin' ? 'Panel Admin' : 'Mi Panel' }}
+          </a>
+          <span class="text-sm text-gray-300">{{ currentUser?.name }}</span>
+          <button (click)="logout()" 
+                  class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm font-medium transition-colors">
+            Salir
+          </button>
+        </div>
       </div>
 
       <!-- Mobile Menu Button -->
@@ -86,12 +106,41 @@
           Precios
         </a>
         <a
+          routerLink="/professionals"
+          (click)="closeMobileMenu()"
+          class="hover:text-blue-400 transition-colors duration-200 py-2"
+        >
+          Profesionales
+        </a>
+        <a
           routerLink="/contact"
           (click)="closeMobileMenu()"
           class="hover:text-blue-400 transition-colors duration-200 py-2"
         >
           Contacto
         </a>
+        
+        <!-- Mobile Authentication Links -->
+        <div *ngIf="!isAuthenticated" class="pt-4 border-t border-gray-700">
+          <a routerLink="/login" 
+             (click)="closeMobileMenu()"
+             class="block bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium text-center transition-colors">
+            Iniciar Sesión
+          </a>
+        </div>
+        
+        <div *ngIf="isAuthenticated" class="pt-4 border-t border-gray-700 space-y-2">
+          <div class="text-sm text-gray-300 text-center">{{ currentUser?.name }}</div>
+          <a [routerLink]="currentUser?.role === 'admin' ? '/admin' : '/dashboard'" 
+             (click)="closeMobileMenu()"
+             class="block hover:text-blue-400 transition-colors duration-200 py-2 text-center">
+            {{ currentUser?.role === 'admin' ? 'Panel Admin' : 'Mi Panel' }}
+          </a>
+          <button (click)="logout()" 
+                  class="w-full bg-red-600 hover:bg-red-700 px-3 py-2 rounded text-sm font-medium transition-colors">
+            Cerrar Sesión
+          </button>
+        </div>
       </div>
     </div>
   </div>

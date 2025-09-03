@@ -1,59 +1,97 @@
-# OmmaFe
+# OMMA Frontend - Consultation Room Rental System
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.1.1.
+Angular frontend application for the OMMA consultation room rental system. This application provides interfaces for administrators and professionals to manage spaces, reservations, credits, and user accounts.
 
-## Development server
+## Features
 
-To start a local development server, run:
+### Admin Features
+- **User Management**: Create professional accounts and manage user data
+- **Space Management**: Create consultation spaces and manage schedules
+- **Credits Management**: Assign credits to professionals and track usage
+- **Reservation Management**: Approve/reject pending reservations
+- **Dashboard**: Overview of system statistics and quick access to management tools
 
+### Professional Features
+- **Dashboard**: View credits, upcoming reservations, and profile information
+- **Space Booking**: Reserve consultation spaces with credit validation
+- **Reservation Management**: View and cancel reservations (with penalty system)
+- **Profile Management**: Update professional information and specialty
+
+### Public Features
+- **Professional Directory**: Browse available professionals by specialty with search and filter
+
+## System Requirements
+
+- Node.js 18+ 
+- Angular CLI 19+
+- Backend API running on configured endpoint
+
+## Installation
+
+1. Install dependencies:
+```bash
+npm install
+```
+
+2. Configure environment:
+   - Update `src/environments/environment.ts` for development
+   - Update `src/environments/environment.prod.ts` for production
+   - Set the correct `apiUrl` pointing to your backend server
+
+## Development
+
+Start the development server:
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
+Navigate to `http://localhost:4200/` to access the application.
 
 ## Building
 
-To build the project run:
-
+Build for production:
 ```bash
-ng build
+ng build --configuration production
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Authentication
 
-## Running unit tests
+The application uses JWT token-based authentication:
+- Tokens are stored in localStorage
+- HTTP interceptor automatically adds Authorization headers
+- Route guards protect admin and professional areas
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## User Roles
 
-```bash
-ng test
-```
+- **Admin**: Full system access, can manage users, spaces, credits, and reservations
+- **Professional**: Can book spaces, manage reservations, and view credits
 
-## Running end-to-end tests
+## Credit System
 
-For end-to-end (e2e) testing, run:
+- Credits are used to reserve consultation spaces
+- 6 credits = 1 hour of consultation time
+- Cancellations within 24 hours incur a 2-credit penalty
+- Only professionals with active credits appear in the public directory
 
-```bash
-ng e2e
-```
+## API Integration
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+The frontend integrates with the OMMA backend API with endpoints for:
+- Authentication (`/auth/login`)
+- Admin operations (`/admin/*`)
+- Professional operations (`/reservations`, `/credits`, `/spaces`)
+- Public directory (`/professionals`)
 
-## Additional Resources
+## Deployment
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+For production deployment:
+1. Update `environment.prod.ts` with your production API URL
+2. Build the application: `ng build --configuration production`
+3. Deploy the `dist/` folder to your web server
+4. Ensure your backend API is accessible from the production domain
+
+## Technology Stack
+
+- **Angular 20**: Frontend framework with standalone components
+- **Tailwind CSS**: Utility-first CSS framework for styling
+- **TypeScript**: Type-safe JavaScript development
+- **RxJS**: Reactive programming for HTTP requests and state management

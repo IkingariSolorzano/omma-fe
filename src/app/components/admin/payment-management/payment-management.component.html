@@ -1,0 +1,211 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Header -->
+  <div class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-900">Gestión de Pagos</h1>
+        <button 
+          (click)="toggleCreateForm()"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center">
+          <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+          {{ showCreateForm ? 'Cancelar' : 'Registrar Pago' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <!-- Success/Error Messages -->
+    <div *ngIf="success" class="mb-4 bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md">
+      {{ success }}
+    </div>
+    
+    <div *ngIf="error" class="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+      {{ error }}
+    </div>
+
+    <!-- Register Payment Form -->
+    <div *ngIf="showCreateForm" class="bg-white shadow rounded-lg mb-6">
+      <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Registrar Nuevo Pago</h3>
+        <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <label for="user_id" class="block text-sm font-medium text-gray-700">Usuario</label>
+              <select 
+                id="user_id"
+                formControlName="user_id"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <option value="">Seleccionar usuario</option>
+                <option *ngFor="let user of users" [value]="user.id">{{ user.name }}</option>
+              </select>
+              <div *ngIf="user_id?.invalid && user_id?.touched" class="mt-1 text-sm text-red-600">
+                Usuario es requerido
+              </div>
+            </div>
+
+            <div>
+              <label for="payment_method" class="block text-sm font-medium text-gray-700">Método de Pago</label>
+              <select 
+                id="payment_method"
+                formControlName="payment_method"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <option value="cash">Efectivo</option>
+                <option value="transfer">Transferencia</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="amount" class="block text-sm font-medium text-gray-700">Monto ($)</label>
+              <input 
+                type="number"
+                id="amount"
+                formControlName="amount"
+                step="0.01"
+                min="0"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+              <div *ngIf="amount?.invalid && amount?.touched" class="mt-1 text-sm text-red-600">
+                Monto válido es requerido
+              </div>
+            </div>
+
+            <div>
+              <label for="credits" class="block text-sm font-medium text-gray-700">Créditos</label>
+              <input 
+                type="number"
+                id="credits"
+                formControlName="credits"
+                min="1"
+                readonly
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-100">
+              <div *ngIf="credits?.invalid && credits?.touched" class="mt-1 text-sm text-red-600">
+                Créditos válidos son requeridos
+              </div>
+            </div>
+
+            <div *ngIf="payment_method?.value === 'transfer'">
+              <label for="reference" class="block text-sm font-medium text-gray-700">Referencia</label>
+              <input 
+                type="text"
+                id="reference"
+                formControlName="reference"
+                placeholder="Número de referencia"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div class="sm:col-span-2">
+              <label for="notes" class="block text-sm font-medium text-gray-700">Notas</label>
+              <textarea 
+                id="notes"
+                formControlName="notes"
+                rows="3"
+                placeholder="Notas adicionales sobre el pago"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+          </div>
+
+          <div class="mt-6 flex justify-end">
+            <button 
+              type="submit"
+              [disabled]="paymentForm.invalid || loading"
+              class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md text-sm font-medium">
+              {{ loading ? 'Registrando...' : 'Registrar Pago' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- User Payment History Modal -->
+    <div *ngIf="selectedUserId" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-medium text-gray-900">Historial de Pagos</h3>
+          <button (click)="closeUserHistory()" title="Cerrar historial" class="text-gray-400 hover:text-gray-600">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="max-h-96 overflow-y-auto">
+          <div *ngIf="userPaymentHistory.length === 0" class="text-center py-8 text-gray-500">
+            No hay pagos registrados para este usuario
+          </div>
+          
+          <div *ngFor="let payment of userPaymentHistory" class="border-b border-gray-200 py-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="font-medium">${{ payment.amount }} - {{ payment.credits }} créditos</p>
+                <p class="text-sm text-gray-600">{{ payment.payment_method === 'cash' ? 'Efectivo' : 'Transferencia' }}</p>
+                <p *ngIf="payment.reference" class="text-sm text-gray-500">Ref: {{ payment.reference }}</p>
+                <p *ngIf="payment.notes" class="text-sm text-gray-500">{{ payment.notes }}</p>
+              </div>
+              <span class="text-sm text-gray-400">{{ payment.created_at | date:'short' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payments List -->
+    <div class="bg-white shadow rounded-lg">
+      <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Historial de Pagos</h3>
+        
+        <div *ngIf="payments.length === 0" class="text-center py-8 text-gray-500">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+          </svg>
+          <p class="mt-2">No hay pagos registrados</p>
+        </div>
+
+        <div *ngIf="payments.length > 0" class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Créditos</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr *ngFor="let payment of payments" class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900">{{ payment.user_name || 'Usuario #' + payment.user_id }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">${{ payment.amount }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">{{ payment.credits }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                        [class]="payment.payment_method === 'cash' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'">
+                    {{ payment.payment_method === 'cash' ? 'Efectivo' : 'Transferencia' }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ payment.created_at | date:'short' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <button 
+                    (click)="viewUserPaymentHistory(payment.user_id)"
+                    class="text-blue-600 hover:text-blue-900">
+                    Ver historial
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

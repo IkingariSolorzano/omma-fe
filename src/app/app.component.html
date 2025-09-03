@@ -1,5 +1,5 @@
-<app-navbar></app-navbar>
+<app-navbar *ngIf="!isAdminRoute"></app-navbar>
 <main>
   <router-outlet></router-outlet>
 </main>
-<app-floating-whatsapp></app-floating-whatsapp>
+<app-floating-whatsapp *ngIf="isLandingRoute"></app-floating-whatsapp>

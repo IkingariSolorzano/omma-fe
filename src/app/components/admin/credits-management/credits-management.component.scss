@@ -1,0 +1,24 @@
+// Credits management styles
+.credits-form {
+  transition: all 0.3s ease;
+}
+
+.credits-table {
+  transition: all 0.2s ease;
+}
+
+.credits-badge {
+  transition: all 0.2s ease;
+}
+
+.info-card {
+  border-left: 4px solid #3b82f6;
+}
+
+.warning-card {
+  border-left: 4px solid #f59e0b;
+}
+
+.success-card {
+  border-left: 4px solid #10b981;
+}

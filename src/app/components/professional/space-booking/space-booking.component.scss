@@ -1,0 +1,43 @@
+// Space booking styles
+.space-card {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.space-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.space-card.selected {
+  border-color: #3b82f6 !important;
+  background-color: #eff6ff;
+}
+
+.booking-form {
+  transition: all 0.3s ease;
+}
+
+.credits-info {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+}
+
+.day-with-my-reservation {
+  position: relative;
+}
+
+.day-with-my-reservation::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  background-color: #3b82f6; /* blue-500 */
+  border-radius: 50%;
+}
+
+.day-with-my-reservation.bg-blue-500::after {
+  background-color: white;
+}

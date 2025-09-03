@@ -1,0 +1,593 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Header -->
+  <div class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-900">Gestión de Usuarios</h1>
+        <button 
+          (click)="toggleCreateForm()"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center">
+          <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+          {{ showCreateForm ? 'Cancelar' : 'Crear Usuario' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Register Payment Modal -->
+  <div *ngIf="showPaymentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+      <div class="mt-3">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-medium text-gray-900">Registrar Pago</h3>
+          <button (click)="closePaymentModal()" class="text-gray-400 hover:text-gray-600" title="Cerrar">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div *ngIf="selectedUser" class="mb-4 p-3 bg-gray-50 rounded">
+          <p class="text-sm text-gray-600"><strong>Usuario:</strong> {{ selectedUser.name }}</p>
+          <p class="text-sm text-gray-600"><strong>Email:</strong> {{ selectedUser.email }}</p>
+        </div>
+
+        <form [formGroup]="paymentForm" (ngSubmit)="registerPayment()">
+          <div class="space-y-4">
+            <div>
+              <label for="payment-amount" class="block text-sm font-medium text-gray-700 mb-2">Monto ($ MXN) *</label>
+              <input id="payment-amount" type="number" step="0.01" placeholder="0.00" formControlName="amount" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+              <label for="payment-credits" class="block text-sm font-medium text-gray-700 mb-2">Créditos *</label>
+              <input id="payment-credits" type="number" formControlName="credits" [readonly]="true" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+              <label for="payment-method" class="block text-sm font-medium text-gray-700 mb-2">Método de Pago *</label>
+              <select id="payment-method" formControlName="payment_method" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="cash">Efectivo</option>
+                <option value="transfer">Transferencia</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="payment-reference" class="block text-sm font-medium text-gray-700 mb-2">Referencia</label>
+              <input id="payment-reference" type="text" formControlName="reference" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Folio/Comprobante (opcional)">
+            </div>
+
+            <div>
+              <label for="payment-notes" class="block text-sm font-medium text-gray-700 mb-2">Notas</label>
+              <textarea id="payment-notes" formControlName="notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Notas (opcional)"></textarea>
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-3 mt-6">
+            <button type="button" (click)="closePaymentModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancelar</button>
+            <button type="submit" [disabled]="paymentForm.invalid || loading" class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50">
+              {{ loading ? 'Registrando...' : 'Registrar Pago' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Credits Modal -->
+  <div *ngIf="showCreditsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-10 mx-auto p-5 border w-[34rem] max-w-full shadow-lg rounded-md bg-white">
+      <div class="mt-1 max-h-[75vh] overflow-y-auto pr-1">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-lg font-medium text-gray-900">Gestionar Créditos</h3>
+          <button (click)="closeCreditsModal()" class="text-gray-400 hover:text-gray-600" title="Cerrar">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div *ngIf="selectedUser" class="mb-3 p-3 bg-gray-50 rounded">
+          <p class="text-sm text-gray-600"><strong>Usuario:</strong> {{ selectedUser.name }} (ID: {{ selectedUser.id }})</p>
+          <p class="text-sm text-gray-600"><strong>Créditos:</strong> {{ selectedUser.active_credits }} activos / {{ selectedUser.total_credits }} total</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="mb-4 border-b border-gray-200">
+          <nav class="-mb-px flex space-x-4" aria-label="Tabs">
+            <button (click)="activeCreditTab = 'add'" [class.border-blue-500]="activeCreditTab==='add'" [class.text-blue-600]="activeCreditTab==='add'" class="border-b-2 px-3 py-2 text-sm font-medium">Agregar</button>
+            <button (click)="activeCreditTab = 'extend'" [class.border-blue-500]="activeCreditTab==='extend'" [class.text-blue-600]="activeCreditTab==='extend'" class="border-b-2 px-3 py-2 text-sm font-medium">Extender</button>
+            <button (click)="activeCreditTab = 'reactivate'" [class.border-blue-500]="activeCreditTab==='reactivate'" [class.text-blue-600]="activeCreditTab==='reactivate'" class="border-b-2 px-3 py-2 text-sm font-medium">Reactivar</button>
+            <button (click)="activeCreditTab = 'transfer'" [class.border-blue-500]="activeCreditTab==='transfer'" [class.text-blue-600]="activeCreditTab==='transfer'" class="border-b-2 px-3 py-2 text-sm font-medium">Transferir</button>
+            <button (click)="activeCreditTab = 'deduct'" [class.border-blue-500]="activeCreditTab==='deduct'" [class.text-blue-600]="activeCreditTab==='deduct'" class="border-b-2 px-3 py-2 text-sm font-medium">Reducir</button>
+          </nav>
+        </div>
+
+        <!-- Add Credits -->
+        <form *ngIf="activeCreditTab==='add'" [formGroup]="addCreditsForm" (ngSubmit)="addCredits()" class="space-y-4">
+          <div>
+            <label for="add-credits-amount" class="block text-sm font-medium text-gray-700 mb-2">Créditos *</label>
+            <input id="add-credits-amount" type="number" placeholder="0" formControlName="amount" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="flex justify-end space-x-3">
+            <button type="button" (click)="closeCreditsModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancelar</button>
+            <button type="submit" [disabled]="addCreditsForm.invalid || loading" class="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md hover:bg-purple-700 disabled:opacity-50">
+              {{ loading ? 'Agregando...' : 'Agregar' }}
+            </button>
+          </div>
+        </form>
+
+        <!-- Extend Expiry -->
+        <form *ngIf="activeCreditTab==='extend'" [formGroup]="extendExpiryForm" (ngSubmit)="extendExpiry()" class="space-y-4">
+          <div>
+            <label for="extend-credit-id" class="block text-sm font-medium text-gray-700 mb-2">Lote de crédito *</label>
+            <select id="extend-credit-id" formControlName="credit_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="" disabled>Selecciona un lote</option>
+              <option *ngFor="let lot of creditLots" [value]="lot.id">
+                ID {{ lot.id }} - {{ lot.amount }} cr - vence {{ formatDate(lot.expiry_date) }} {{ lot.is_active ? '(activo)' : '(expirado)' }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label for="extend-days" class="block text-sm font-medium text-gray-700 mb-2">Días a extender *</label>
+            <input id="extend-days" type="number" min="1" placeholder="30" formControlName="days" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="flex justify-end space-x-3">
+            <button type="button" (click)="closeCreditsModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancelar</button>
+            <button type="submit" [disabled]="extendExpiryForm.invalid || loading" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50">
+              {{ loading ? 'Extendiendo...' : 'Extender' }}
+            </button>
+          </div>
+        </form>
+
+        <!-- Reactivate Expired -->
+        <form *ngIf="activeCreditTab==='reactivate'" [formGroup]="reactivateForm" (ngSubmit)="reactivateCredits()" class="space-y-4">
+          <div>
+            <label for="reactivate-credit-id" class="block text-sm font-medium text-gray-700 mb-2">Lote de crédito *</label>
+            <select id="reactivate-credit-id" formControlName="credit_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="" disabled>Selecciona un lote</option>
+              <option *ngFor="let lot of creditLots" [value]="lot.id">
+                ID {{ lot.id }} - {{ lot.amount }} cr - compra {{ formatDate(lot.purchase_date) }} - vence {{ formatDate(lot.expiry_date) }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label for="reactivate-expiry" class="block text-sm font-medium text-gray-700 mb-2">Nueva fecha de expiración *</label>
+            <input id="reactivate-expiry" type="date" formControlName="new_expiry" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="flex justify-end space-x-3">
+            <button type="button" (click)="closeCreditsModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancelar</button>
+            <button type="submit" [disabled]="reactivateForm.invalid || loading" class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50">
+              {{ loading ? 'Reactivando...' : 'Reactivar' }}
+            </button>
+          </div>
+        </form>
+
+        <!-- Transfer Credits -->
+        <form *ngIf="activeCreditTab==='transfer'" [formGroup]="transferForm" (ngSubmit)="transferCredits()" class="space-y-4">
+          <div>
+            <label for="transfer-credit-id" class="block text-sm font-medium text-gray-700 mb-2">Lote de crédito *</label>
+            <select id="transfer-credit-id" formControlName="credit_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="" disabled>Selecciona un lote</option>
+              <option *ngFor="let lot of creditLots" [value]="lot.id">
+                ID {{ lot.id }} - {{ lot.amount }} cr - vence {{ formatDate(lot.expiry_date) }} {{ lot.is_active ? '(activo)' : '(expirado)' }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label for="transfer-to-user" class="block text-sm font-medium text-gray-700 mb-2">ID usuario destino *</label>
+            <input id="transfer-to-user" type="number" placeholder="ID" formControlName="to_user_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label for="transfer-amount" class="block text-sm font-medium text-gray-700 mb-2">Créditos a transferir *</label>
+            <input id="transfer-amount" type="number" placeholder="0" formControlName="amount" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="flex justify-end space-x-3">
+            <button type="button" (click)="closeCreditsModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancelar</button>
+            <button type="submit" [disabled]="transferForm.invalid || loading" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 disabled:opacity-50">
+              {{ loading ? 'Transfiriendo...' : 'Transferir' }}
+            </button>
+          </div>
+        </form>
+
+        <!-- Deduct Credits -->
+        <form *ngIf="activeCreditTab==='deduct'" [formGroup]="deductForm" (ngSubmit)="deductCredits()" class="space-y-4">
+          <div>
+            <label for="deduct-credit-id" class="block text-sm font-medium text-gray-700 mb-2">Lote de crédito *</label>
+            <select id="deduct-credit-id" formControlName="credit_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="" disabled>Selecciona un lote</option>
+              <option *ngFor="let lot of creditLots" [value]="lot.id">
+                ID {{ lot.id }} - {{ lot.amount }} cr - vence {{ formatDate(lot.expiry_date) }} {{ lot.is_active ? '(activo)' : '(expirado)' }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label for="deduct-amount" class="block text-sm font-medium text-gray-700 mb-2">Créditos a deducir *</label>
+            <input id="deduct-amount" type="number" placeholder="0" formControlName="amount" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="flex justify-end space-x-3">
+            <button type="button" (click)="closeCreditsModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancelar</button>
+            <button type="submit" [disabled]="deductForm.invalid || loading" class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 disabled:opacity-50">
+              {{ loading ? 'Deduciendo...' : 'Deducir' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <!-- Success/Error Messages -->
+    <div *ngIf="success" class="mb-4 bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md">
+      {{ success }}
+    </div>
+    
+    <div *ngIf="error" class="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+      {{ error }}
+    </div>
+
+    <!-- Create User Form -->
+    <div *ngIf="showCreateForm" class="bg-white shadow rounded-lg mb-6">
+      <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Crear Nuevo Profesional</h3>
+        
+        <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="space-y-4">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label for="name" class="block text-sm font-medium text-gray-700">Nombre Completo</label>
+              <input 
+                type="text" 
+                id="name" 
+                formControlName="name"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                [class.border-red-500]="name?.invalid && name?.touched">
+              <div *ngIf="name?.invalid && name?.touched" class="text-red-600 text-sm mt-1">
+                El nombre es requerido
+              </div>
+            </div>
+
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+              <input 
+                type="email" 
+                id="email" 
+                formControlName="email"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                [class.border-red-500]="email?.invalid && email?.touched">
+              <div *ngIf="email?.invalid && email?.touched" class="text-red-600 text-sm mt-1">
+                <div *ngIf="email?.errors?.['required']">El email es requerido</div>
+                <div *ngIf="email?.errors?.['email']">Formato de email inválido</div>
+              </div>
+            </div>
+
+            <div>
+              <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
+              <input 
+                type="password" 
+                id="password" 
+                formControlName="password"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                [class.border-red-500]="password?.invalid && password?.touched">
+              <div *ngIf="password?.invalid && password?.touched" class="text-red-600 text-sm mt-1">
+                <div *ngIf="password?.errors?.['required']">La contraseña es requerida</div>
+                <div *ngIf="password?.errors?.['minlength']">Mínimo 6 caracteres</div>
+              </div>
+            </div>
+
+            <div>
+              <label for="phone" class="block text-sm font-medium text-gray-700">Teléfono</label>
+              <input 
+                type="tel" 
+                id="phone" 
+                formControlName="phone"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                [class.border-red-500]="phone?.invalid && phone?.touched">
+              <div *ngIf="phone?.invalid && phone?.touched" class="text-red-600 text-sm mt-1">
+                El teléfono es requerido
+              </div>
+            </div>
+
+            <div>
+              <label for="specialty" class="block text-sm font-medium text-gray-700">Especialidad</label>
+              <input 
+                type="text" 
+                id="specialty" 
+                formControlName="specialty"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                [class.border-red-500]="specialty?.invalid && specialty?.touched">
+              <div *ngIf="specialty?.invalid && specialty?.touched" class="text-red-600 text-sm mt-1">
+                La especialidad es requerida
+              </div>
+            </div>
+
+            <div class="sm:col-span-2">
+              <label for="description" class="block text-sm font-medium text-gray-700">Descripción</label>
+              <textarea 
+                id="description" 
+                formControlName="description"
+                rows="3"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="Descripción del profesional (opcional)"></textarea>
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-3">
+            <button 
+              type="button"
+              (click)="toggleCreateForm()"
+              class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md text-sm font-medium">
+              Cancelar
+            </button>
+            <button 
+              type="submit" 
+              [disabled]="userForm.invalid || loading"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50">
+              {{ loading ? 'Creando...' : 'Crear Usuario' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Users List -->
+    <div class="bg-white shadow rounded-lg">
+      <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Usuarios Registrados</h3>
+        
+        <div *ngIf="users.length === 0" class="text-center py-8 text-gray-500">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+          </svg>
+          <p class="mt-2">No hay usuarios registrados</p>
+        </div>
+
+        <div *ngIf="users.length > 0" class="overflow-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+          <table class="min-w-full divide-y divide-gray-300">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Especialidad</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Créditos</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr *ngFor="let user of users" class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="h-10 w-10 flex-shrink-0">
+                      <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                        <span class="text-sm font-medium text-blue-600">{{ user.name.charAt(0).toUpperCase() || '?' }}</span>
+                      </div>
+                    </div>
+                    <div class="ml-4">
+                      <div class="text-sm font-medium text-gray-900">{{ user.name }}</div>
+                      <div class="text-sm text-gray-500">ID: {{ user.id }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">{{ user.email }}</div>
+                  <div class="text-sm text-gray-500">{{ user.phone }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ user.specialty || 'N/A' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                        [class.bg-purple-100]="user.role === 'admin'"
+                        [class.text-purple-800]="user.role === 'admin'"
+                        [class.bg-green-100]="user.role === 'professional'"
+                        [class.text-green-800]="user.role === 'professional'">
+                    {{ user.role === 'admin' ? 'Administrador' : 'Profesional' }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">
+                    <div class="font-medium">{{ user.active_credits }} activos</div>
+                    <div class="text-gray-500">{{ user.total_credits }} total</div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                        [class.bg-green-100]="user.is_active"
+                        [class.text-green-800]="user.is_active"
+                        [class.bg-red-100]="!user.is_active"
+                        [class.text-red-800]="!user.is_active">
+                    {{ user.is_active ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex flex-col items-start gap-1 text-left">
+                  <button 
+                    (click)="openEditModal(user)"
+                    class="text-blue-600 hover:text-blue-900">
+                    Editar
+                  </button>
+                  <button 
+                    (click)="openPasswordModal(user)"
+                    class="text-yellow-600 hover:text-yellow-900">
+                    Contraseña
+                  </button>
+                  <button 
+                    (click)="openPaymentModal(user)"
+                    class="text-green-600 hover:text-green-900">
+                    Registrar Pago
+                  </button>
+                  <button 
+                    (click)="openCreditsModal(user)"
+                    class="text-purple-600 hover:text-purple-900">
+                    Gestionar Créditos
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div *ngIf="showEditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Editar Usuario</h3>
+            <button (click)="closeEditModal()" class="text-gray-400 hover:text-gray-600" title="Cerrar">
+              <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div *ngIf="selectedUser" class="mb-4 p-3 bg-gray-50 rounded">
+            <p class="text-sm text-gray-600"><strong>Email:</strong> {{ selectedUser.email }}</p>
+            <p class="text-sm text-gray-600"><strong>Créditos:</strong> {{ selectedUser.active_credits }} activos / {{ selectedUser.total_credits }} total</p>
+          </div>
+
+          <form [formGroup]="editForm" (ngSubmit)="updateUser()">
+            <div class="space-y-4">
+              <div>
+                <label for="edit-name" class="block text-sm font-medium text-gray-700 mb-2">
+                  Nombre Completo *
+                </label>
+                <input 
+                  type="text"
+                  id="edit-name"
+                  formControlName="name"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+
+              <div>
+                <label for="edit-phone" class="block text-sm font-medium text-gray-700 mb-2">
+                  Teléfono *
+                </label>
+                <input 
+                  type="tel"
+                  id="edit-phone"
+                  formControlName="phone"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+
+              <div>
+                <label for="edit-specialty" class="block text-sm font-medium text-gray-700 mb-2">
+                  Especialidad
+                </label>
+                <input 
+                  type="text"
+                  id="edit-specialty"
+                  formControlName="specialty"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+
+              <div>
+                <label for="edit-description" class="block text-sm font-medium text-gray-700 mb-2">
+                  Descripción
+                </label>
+                <textarea 
+                  id="edit-description"
+                  formControlName="description"
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Descripción del profesional..."></textarea>
+              </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 mt-6">
+              <button 
+                type="button"
+                (click)="closeEditModal()"
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                Cancelar
+              </button>
+              <button 
+                type="submit"
+                [disabled]="editForm.invalid || loading"
+                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50">
+                {{ loading ? 'Actualizando...' : 'Actualizar' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  <!-- Change Password Modal -->
+  <div *ngIf="showPasswordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Cambiar Contraseña</h3>
+            <button (click)="closePasswordModal()" class="text-gray-400 hover:text-gray-600" title="Cerrar">
+              <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div *ngIf="selectedUser" class="mb-4 p-3 bg-gray-50 rounded">
+            <p class="text-sm text-gray-600"><strong>Usuario:</strong> {{ selectedUser.name }}</p>
+            <p class="text-sm text-gray-600"><strong>Email:</strong> {{ selectedUser.email }}</p>
+          </div>
+
+          <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+            <div class="mb-4">
+              <label for="new-password" class="block text-sm font-medium text-gray-700 mb-2">
+                Nueva Contraseña *
+              </label>
+              <input 
+                type="password"
+                id="new-password"
+                formControlName="new_password"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Mínimo 6 caracteres">
+              <div class="text-red-600 text-sm mt-1" *ngIf="passwordForm.get('new_password')?.touched && passwordForm.get('new_password')?.hasError('required')">
+                La contraseña es requerida
+              </div>
+              <div class="text-red-600 text-sm mt-1" *ngIf="passwordForm.get('new_password')?.touched && passwordForm.get('new_password')?.hasError('minlength')">
+                Mínimo 6 caracteres
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-2">
+                Confirmar Contraseña *
+              </label>
+              <input 
+                type="password"
+                id="confirm-password"
+                formControlName="confirm_password"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Repite la contraseña">
+              <div class="text-red-600 text-sm mt-1" *ngIf="passwordForm.get('confirm_password')?.touched && passwordForm.get('confirm_password')?.hasError('required')">
+                La confirmación es requerida
+              </div>
+              <div class="text-red-600 text-sm mt-1" *ngIf="passwordForm.touched && passwordForm.errors?.['mismatch']">
+                Las contraseñas no coinciden
+              </div>
+            </div>
+
+            <div class="flex justify-end space-x-3">
+              <button 
+                type="button"
+                (click)="closePasswordModal()"
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                Cancelar
+              </button>
+              <button 
+                type="submit"
+                [disabled]="passwordForm.invalid || loading"
+                class="px-4 py-2 text-sm font-medium text-white bg-yellow-600 border border-transparent rounded-md hover:bg-yellow-700 disabled:opacity-50">
+                {{ loading ? 'Cambiando...' : 'Cambiar Contraseña' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

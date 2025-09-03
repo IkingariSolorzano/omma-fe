@@ -1,0 +1,26 @@
+// Professional dashboard styles
+.stat-card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.quick-action-btn {
+  transition: all 0.3s ease;
+}
+
+.quick-action-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.reservation-card {
+  transition: all 0.3s ease;
+}
+
+.reservation-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}

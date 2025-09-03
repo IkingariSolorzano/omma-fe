@@ -15,7 +15,7 @@ interface WhatsAppOption {
 })
 export class FloatingWhatsappComponent {
   isMenuOpen = false;
-  phoneNumber = "5491167424184"; // Replace with actual WhatsApp number
+  phoneNumber = "524432461444"; // Correct WhatsApp number
 
   whatsappOptions: WhatsAppOption[] = [
     {

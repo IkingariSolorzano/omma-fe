@@ -1,0 +1,25 @@
+// Reservation management styles
+.reservation-card {
+  transition: all 0.3s ease;
+}
+
+.reservation-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.approve-btn {
+  transition: all 0.2s ease;
+}
+
+.approve-btn:hover {
+  transform: scale(1.05);
+}
+
+.reject-btn {
+  transition: all 0.2s ease;
+}
+
+.reject-btn:hover {
+  transform: scale(1.05);
+}
