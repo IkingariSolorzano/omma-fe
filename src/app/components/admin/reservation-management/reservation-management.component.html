@@ -226,6 +226,11 @@
                           Aprobar
                         </button>
                         <button *ngIf="reservation.status !== 'cancelled'" 
+                                (click)="openEditModal(reservation)"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                          Editar
+                        </button>
+                        <button *ngIf="reservation.status !== 'cancelled'" 
                                 (click)="openCancelModal(reservation)"
                                 class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors">
                           Cancelar
@@ -323,6 +328,107 @@
                 [disabled]="cancelForm.invalid"
                 class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 disabled:opacity-50">
                 Confirmar Cancelación
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Reservation Modal -->
+    <div *ngIf="showEditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-10 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
+        <div class="mt-3">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Editar Reservación</h3>
+            <button (click)="closeEditModal()" class="text-gray-400 hover:text-gray-600">
+              <span class="sr-only">Cerrar</span>
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <form [formGroup]="editForm" (ngSubmit)="updateReservation()">
+            <!-- Date Selection -->
+            <div class="mb-6">
+              <label for="edit-date" class="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
+              <input type="date" id="edit-date" formControlName="date" 
+                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- Available Spaces -->
+            <div class="mb-6" *ngIf="selectedEditDate">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Consultorios Disponibles</label>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div *ngFor="let space of availableSpaces" 
+                     (click)="editForm.patchValue({space_id: space.id})"
+                     [class]="'p-3 border rounded-lg cursor-pointer transition-colors ' + 
+                             (editForm.get('space_id')?.value == space.id ? 
+                              'border-blue-500 bg-blue-50' : 
+                              'border-gray-300 hover:border-gray-400')">
+                  <div class="font-medium text-gray-900">{{ space.name }}</div>
+                  <div class="text-sm text-gray-500">{{ space.cost_credits }} créditos/hora</div>
+                </div>
+              </div>
+              <div *ngIf="availableSpaces.length === 0" class="text-gray-500 text-sm mt-2">
+                No hay consultorios disponibles para esta fecha.
+              </div>
+            </div>
+
+            <!-- Available Time Slots -->
+            <div class="mb-6" *ngIf="selectedEditSpaceId && availableTimeSlots.length > 0">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Horarios Disponibles</label>
+              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                <button type="button"
+                        *ngFor="let timeSlot of availableTimeSlots"
+                        (click)="selectTimeSlot(timeSlot)"
+                        [disabled]="!timeSlot.isAvailable"
+                        [class]="'p-2 text-sm rounded border transition-colors ' + 
+                                (timeSlot.isSelected ? 
+                                 'bg-blue-500 text-white border-blue-500' : 
+                                 timeSlot.isAvailable ? 
+                                 'bg-green-50 text-green-700 border-green-300 hover:bg-green-100' : 
+                                 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed')">
+                  {{ timeSlot.timeLabel }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Manual Time Input (fallback) -->
+            <div class="mb-6" *ngIf="editForm.get('space_id')?.value && availableTimeSlots.length === 0">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label for="edit-start-time" class="block text-sm font-medium text-gray-700 mb-1">Hora de inicio</label>
+                  <input type="time" id="edit-start-time" formControlName="start_time" 
+                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                  <label for="edit-end-time" class="block text-sm font-medium text-gray-700 mb-1">Hora de fin</label>
+                  <input type="time" id="edit-end-time" formControlName="end_time" 
+                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="mb-6">
+              <label for="edit-notes" class="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+              <textarea id="edit-notes" formControlName="notes" rows="3" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                        placeholder="Notas adicionales..."></textarea>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-end space-x-3">
+              <button type="button" (click)="closeEditModal()" 
+                      class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                Cancelar
+              </button>
+              <button type="submit" [disabled]="editForm.invalid || loading" 
+                      class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
+                <span *ngIf="loading" class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+                Actualizar Reservación
               </button>
             </div>
           </form>

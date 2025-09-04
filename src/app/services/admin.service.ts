@@ -307,12 +307,35 @@ export class AdminService {
 
   // Space Management
   createSpace(spaceData: CreateSpaceRequest): Observable<Space> {
-    return this.http.post<Space>(`${this.apiUrl}/admin/spaces`, spaceData);
+    return this.http.post<Space>(`${this.apiUrl}/spaces`, spaceData);
   }
 
   getAllSpaces(): Observable<Space[]> {
-    return this.http.get<any>(`${this.apiUrl}/admin/spaces`).pipe(
-      map((res: any) => Array.isArray(res) ? (res as Space[]) : ((res?.data ?? res?.spaces ?? res?.content ?? []) as Space[]))
+    console.log('AdminService: Making API call to get all spaces');
+    return this.http.get<Space[]>(`${this.apiUrl}/admin/spaces`).pipe(
+      map((response: any) => {
+        console.log('AdminService: Raw API response for spaces:', response);
+        // Handle different response formats
+        if (Array.isArray(response)) {
+          return response as Space[];
+        }
+        return (response?.spaces || response?.data || []) as Space[];
+      })
+    );
+  }
+
+  // Schedules
+  getSchedules(): Observable<Schedule[]> {
+    console.log('AdminService: Making API call to get schedules');
+    return this.http.get<Schedule[]>(`${this.apiUrl}/admin/schedules`).pipe(
+      map((response: any) => {
+        console.log('AdminService: Raw API response for schedules:', response);
+        // Handle different response formats
+        if (Array.isArray(response)) {
+          return response as Schedule[];
+        }
+        return (response?.schedules || response?.data || []) as Schedule[];
+      })
     );
   }
 
@@ -353,16 +376,17 @@ export class AdminService {
     );
   }
 
-  getAllReservations(params?: { start_date?: string; end_date?: string; status?: string; space_id?: number }): Observable<Reservation[]> {
+  getAllReservations(params?: { startDate?: string; endDate?: string; status?: string; space_id?: number }): Observable<Reservation[]> {
     let queryParams = '';
     if (params) {
       const searchParams = new URLSearchParams();
-      if (params.start_date) searchParams.append('start_date', params.start_date);
-      if (params.end_date) searchParams.append('end_date', params.end_date);
+      if (params.startDate) searchParams.append('start_date', params.startDate);
+      if (params.endDate) searchParams.append('end_date', params.endDate);
       if (params.status) searchParams.append('status', params.status);
       if (params.space_id) searchParams.append('space_id', params.space_id.toString());
       queryParams = searchParams.toString() ? '?' + searchParams.toString() : '';
     }
+    console.log('API call URL:', `${this.apiUrl}/admin/reservations${queryParams}`);
     return this.http.get<{ reservations: Reservation[] }>(`${this.apiUrl}/admin/reservations${queryParams}`).pipe(
       map(response => response.reservations || [])
     );
@@ -459,6 +483,11 @@ export class AdminService {
   createExternalReservation(reservation: CreateExternalReservationRequest): Observable<any> {
     return this.http.post(`${this.apiUrl}/admin/reservations/external`, reservation);
   }
+
+  // Update Reservation
+  updateReservation(reservationId: number, updateData: UpdateReservationRequest): Observable<Reservation> {
+    return this.http.put<Reservation>(`${this.apiUrl}/admin/reservations/${reservationId}`, updateData);
+  }
 }
 
 export interface CreateExternalReservationRequest {
@@ -469,5 +498,12 @@ export interface CreateExternalReservationRequest {
   start_time: string;
   duration: number;
   status?: string;
+  notes?: string;
+}
+
+export interface UpdateReservationRequest {
+  space_id?: number;
+  start_time?: string;
+  end_time?: string;
   notes?: string;
 }
