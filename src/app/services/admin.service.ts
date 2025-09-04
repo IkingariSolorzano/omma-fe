@@ -114,6 +114,49 @@ export interface PendingReservation {
   space_name: string;
 }
 
+export interface Reservation {
+  id: number;
+  user_id?: number;
+  external_client_id?: number;
+  space_id: number;
+  start_time: string;
+  end_time: string;
+  status: string;
+  credits_used: number;
+  requires_approval: boolean;
+  approved_by?: number;
+  approved_at?: string;
+  created_by?: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  // Relations
+  user?: {
+    id: number;
+    name: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  external_client?: {
+    id: number;
+    name: string;
+    phone: string;
+    email?: string;
+    notes?: string;
+  };
+  space?: {
+    id: number;
+    name: string;
+    description: string;
+  };
+  created_by_user?: {
+    id: number;
+    name: string;
+    lastName: string;
+  };
+}
+
 export interface Payment {
   id: number;
   user_id: number;
@@ -141,7 +184,7 @@ export interface CalendarSlot {
   space_name: string;
   start_time: string;
   end_time: string;
-  status: 'available' | 'reserved' | 'occupied';
+  status: 'available' | 'reserved' | 'occupied' | 'confirmed' | 'pending' | 'cancelled';
   user_name?: string;
   reservation_id?: number;
 }
@@ -310,6 +353,27 @@ export class AdminService {
     );
   }
 
+  getAllReservations(params?: { start_date?: string; end_date?: string; status?: string; space_id?: number }): Observable<Reservation[]> {
+    let queryParams = '';
+    if (params) {
+      const searchParams = new URLSearchParams();
+      if (params.start_date) searchParams.append('start_date', params.start_date);
+      if (params.end_date) searchParams.append('end_date', params.end_date);
+      if (params.status) searchParams.append('status', params.status);
+      if (params.space_id) searchParams.append('space_id', params.space_id.toString());
+      queryParams = searchParams.toString() ? '?' + searchParams.toString() : '';
+    }
+    return this.http.get<{ reservations: Reservation[] }>(`${this.apiUrl}/admin/reservations${queryParams}`).pipe(
+      map(response => response.reservations || [])
+    );
+  }
+
+  getReservationDetails(id: number): Observable<Reservation> {
+    return this.http.get<{ reservation: Reservation }>(`${this.apiUrl}/admin/reservations/${id}`).pipe(
+      map(response => response.reservation)
+    );
+  }
+
   approveReservation(reservationId: number): Observable<any> {
     return this.http.put(`${this.apiUrl}/admin/reservations/${reservationId}/approve`, {});
   }
@@ -390,4 +454,20 @@ export class AdminService {
   deleteClosedDate(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/admin/closed-dates/${id}`);
   }
+
+  // External Client Reservations
+  createExternalReservation(reservation: CreateExternalReservationRequest): Observable<any> {
+    return this.http.post(`${this.apiUrl}/admin/reservations/external`, reservation);
+  }
+}
+
+export interface CreateExternalReservationRequest {
+  client_name: string;
+  client_phone: string;
+  client_email?: string;
+  space_id: number;
+  start_time: string;
+  duration: number;
+  status?: string;
+  notes?: string;
 }

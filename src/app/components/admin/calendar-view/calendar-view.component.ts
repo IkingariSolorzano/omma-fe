@@ -1,7 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { AdminService, CalendarSlot, CalendarParams, Space, BusinessHour, Schedule, ClosedDate } from '../../../services/admin.service';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AdminService, CalendarSlot, CalendarParams, Space, BusinessHour, Schedule, ClosedDate, CreateExternalReservationRequest } from '../../../services/admin.service';
+import { BusinessHoursService } from '../../../services/business-hours.service';
+import { ProfessionalService } from '../../../services/professional.service';
 
 interface CalendarDay {
   date: Date;
@@ -36,22 +38,43 @@ export class CalendarViewComponent implements OnInit {
   calendarWeeks: CalendarWeek[] = [];
   weekDays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   currentWeekDays: CalendarDay[] = [];
+  selectedDay: CalendarDay | null = null;
+  showBookingModal = false;
+  adminSpaceSchedules: Schedule[] = [];
+  availableHours: string[] = [];
+  selectedSpaceId: number | null = null;
+  bookingForm: FormGroup;
+  isSubmitting = false;
 
   constructor(
     private fb: FormBuilder,
-    private adminService: AdminService
+    private adminService: AdminService,
+    private cdr: ChangeDetectorRef,
+    private businessHoursService: BusinessHoursService,
+    private professionalService: ProfessionalService
   ) {
     this.filterForm = this.fb.group({
       view_type: ['month'],
       space_ids: ['']
+    });
+    
+    this.bookingForm = this.fb.group({
+      clientName: ['', Validators.required],
+      clientPhone: ['', Validators.required],
+      clientEmail: [''],
+      spaceId: ['', Validators.required],
+      duration: [1, [Validators.required, Validators.min(1)]],
+      startHour: ['', Validators.required],
+      status: ['confirmed'],
+      notes: ['']
     });
   }
 
   ngOnInit(): void {
     this.loadSpaces();
     this.loadBusinessHours();
-    this.loadSpaceSchedules();
     this.loadClosedDates();
+    this.loadSpaceSchedules();
     this.loadCalendar();
   }
 
@@ -77,16 +100,6 @@ export class CalendarViewComponent implements OnInit {
     });
   }
 
-  loadSpaceSchedules(): void {
-    this.adminService.getAllSchedules().subscribe({
-      next: (schedules) => {
-        this.spaceSchedules = schedules;
-      },
-      error: (error) => {
-        console.error('Error loading space schedules:', error);
-      }
-    });
-  }
 
   loadClosedDates(): void {
     this.adminService.getClosedDates().subscribe({
@@ -249,6 +262,28 @@ export class CalendarViewComponent implements OnInit {
     }
     
     this.calendarWeeks = weeks;
+
+    // Automatically select today if visible, or the first available day
+    if (!this.selectedDay || !weeks.flatMap(w => w.days).some(d => this.isSelected(d))) {
+      const today = new Date();
+      const todayInView = weeks.flatMap(w => w.days).find(d => this.isSameDay(d.date, today) && d.isEnabled);
+      if (todayInView) {
+        this.selectDay(todayInView);
+      } else {
+        const firstEnabledDay = weeks.flatMap(w => w.days).find(d => d.isCurrentMonth && d.isEnabled);
+        if (firstEnabledDay) {
+          this.selectDay(firstEnabledDay);
+        } else {
+            const anyEnabledDay = weeks.flatMap(w => w.days).find(d => d.isEnabled);
+            if(anyEnabledDay) {
+                this.selectDay(anyEnabledDay);
+            } else {
+                this.selectedDay = null;
+            }
+        }
+      }
+    }
+
   }
 
   buildWeekView(): void {
@@ -270,6 +305,22 @@ export class CalendarViewComponent implements OnInit {
     }
     
     this.currentWeekDays = days;
+
+    // Auto-select day in week view
+    if (!this.selectedDay || !this.currentWeekDays.some(d => this.isSameDay(d.date, this.selectedDay!.date))) {
+        const todayInView = this.currentWeekDays.find(d => this.isSameDay(d.date, new Date()) && d.isEnabled);
+        if (todayInView) {
+            this.selectDay(todayInView);
+        } else {
+            const firstEnabledDay = this.currentWeekDays.find(d => d.isEnabled);
+            if (firstEnabledDay) {
+                this.selectDay(firstEnabledDay);
+            } else {
+                this.selectedDay = null;
+            }
+        }
+    }
+
   }
 
   getSlotsForDate(date: Date): CalendarSlot[] {
@@ -280,10 +331,25 @@ export class CalendarViewComponent implements OnInit {
     });
   }
 
-  isSameDay(date1: Date, date2: Date): boolean {
-    return date1.getFullYear() === date2.getFullYear() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getDate() === date2.getDate();
+  selectDay(day: CalendarDay): void {
+    console.log('selectDay called with:', day.date, 'isEnabled:', day.isEnabled);
+    
+    // Always allow selection, even for disabled days to show "closed" message
+    const updatedDay: CalendarDay = {
+      ...day,
+      slots: this.getSlotsForDate(day.date)
+    };
+    
+    this.selectedDay = updatedDay;
+    console.log('Day selected:', this.selectedDay.date, 'Slots:', this.selectedDay.slots.length);
+    
+    // Force change detection
+    this.cdr.detectChanges();
+  }
+
+  isSelected(day: CalendarDay): boolean {
+    if (!this.selectedDay) return false;
+    return this.isSameDay(day.date, this.selectedDay.date);
   }
 
   navigateWeek(direction: 'prev' | 'next'): void {
@@ -343,7 +409,179 @@ export class CalendarViewComponent implements OnInit {
     return date.toISOString().split('T')[0];
   }
 
+  openBookingModal(): void {
+    this.showBookingModal = true;
+    this.selectedSpaceId = null;
+    this.availableHours = [];
+    this.bookingForm.reset({
+      clientName: '',
+      clientPhone: '',
+      clientEmail: '',
+      spaceId: '',
+      duration: 1,
+      startHour: '',
+      status: 'confirmed',
+      notes: ''
+    });
+  }
+
+  closeBookingModal(): void {
+    this.showBookingModal = false;
+    this.isSubmitting = false;
+  }
+
+  loadSpaceSchedules(): void {
+    this.professionalService.getSchedules().subscribe({
+      next: (response: any) => {
+        console.log('Raw schedules response:', response);
+        // Handle different response formats
+        if (Array.isArray(response)) {
+          this.adminSpaceSchedules = response;
+        } else if (response && Array.isArray(response.schedules)) {
+          this.adminSpaceSchedules = response.schedules;
+        } else if (response && Array.isArray(response.data)) {
+          this.adminSpaceSchedules = response.data;
+        } else {
+          console.warn('Unexpected schedules response format:', response);
+          this.adminSpaceSchedules = [];
+        }
+        console.log('Admin space schedules loaded:', this.adminSpaceSchedules);
+      },
+      error: (error) => {
+        console.error('Error loading space schedules:', error);
+        this.adminSpaceSchedules = [];
+      }
+    });
+  }
+
+  isSameDay(date1: Date, date2: Date): boolean {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
+  }
+
+  onSpaceChange(event: any): void {
+    const spaceId = parseInt(event.target.value);
+    this.selectedSpaceId = spaceId || null;
+    this.bookingForm.patchValue({ spaceId: spaceId || '' });
+    this.updateAvailableHours();
+  }
+
+  updateAvailableHours(): void {
+    if (!this.selectedDay || !this.selectedSpaceId) {
+      this.availableHours = [];
+      return;
+    }
+
+    const dayOfWeek = this.selectedDay.date.getDay();
+    const spaceSchedule = this.adminSpaceSchedules.find(
+      schedule => schedule.space_id === this.selectedSpaceId && 
+                  schedule.day_of_week === dayOfWeek && 
+                  true
+    );
+
+    if (!spaceSchedule) {
+      this.availableHours = [];
+      return;
+    }
+
+    // Get business hours for this day
+    const businessHour = this.businessHours.find(bh => bh.day_of_week === dayOfWeek);
+    if (!businessHour || businessHour.is_closed) {
+      this.availableHours = [];
+      return;
+    }
+
+    // Generate available hours based on space schedule
+    const spaceStartHour = parseInt(spaceSchedule.start_time.split(':')[0]);
+    const spaceEndHour = parseInt(spaceSchedule.end_time.split(':')[0]);
+    
+    const hours: string[] = [];
+    for (let hour = spaceStartHour; hour < spaceEndHour; hour++) {
+      if (this.isHourAvailable(hour)) {
+        hours.push(`${hour.toString().padStart(2, '0')}:00`);
+      }
+    }
+    
+    this.availableHours = hours;
+  }
+
+  isHourAvailable(hour: number): boolean {
+    if (!this.selectedDay || !this.selectedSpaceId) return false;
+
+    const now = new Date();
+    if (this.isSameDay(this.selectedDay.date, now) && hour <= now.getHours()) {
+      return false; // Past hour for today
+    }
+
+    // Check existing reservations
+    const reservationDateTime = new Date(this.selectedDay.date);
+    reservationDateTime.setHours(hour, 0, 0, 0);
+    
+    const hasExistingReservation = this.calendarSlots.some(slot => {
+      if (slot.space_id !== this.selectedSpaceId) return false;
+      if (slot.status === 'cancelled') return false;
+      
+      const slotStart = new Date(slot.start_time);
+      const slotEnd = new Date(slot.end_time);
+      
+      const requestedStart = new Date(reservationDateTime);
+      const requestedEnd = new Date(reservationDateTime);
+      requestedEnd.setHours(hour + 1);
+      
+      return (requestedStart < slotEnd && requestedEnd > slotStart);
+    });
+    
+    return !hasExistingReservation;
+  }
+
   clearMessages(): void {
     this.error = '';
+  }
+
+  createReservation(): void {
+    if (this.bookingForm.invalid || !this.selectedDay) {
+      this.markFormGroupTouched(this.bookingForm);
+      return;
+    }
+
+    this.isSubmitting = true;
+    
+    const formValue = this.bookingForm.value;
+    const startDateTime = new Date(this.selectedDay.date);
+    const [hour, minute] = formValue.startHour.split(':').map(Number);
+    startDateTime.setHours(hour, minute || 0, 0, 0);
+
+    const reservationRequest = {
+      client_name: formValue.clientName,
+      client_phone: formValue.clientPhone,
+      client_email: formValue.clientEmail || undefined,
+      space_id: formValue.spaceId,
+      start_time: startDateTime.toISOString(),
+      duration: parseInt(formValue.duration, 10),
+      status: formValue.status,
+      notes: formValue.notes || undefined
+    };
+
+    this.adminService.createExternalReservation(reservationRequest).subscribe({
+      next: (response) => {
+        console.log('Reserva creada exitosamente:', response);
+        this.closeBookingModal();
+        this.loadCalendar(); // Refresh calendar to show new reservation
+        // You could add a success message here
+      },
+      error: (error) => {
+        console.error('Error al crear la reserva:', error);
+        this.error = error?.error?.error || 'Error al crear la reserva';
+        this.isSubmitting = false;
+      }
+    });
+  }
+
+  private markFormGroupTouched(formGroup: FormGroup): void {
+    Object.keys(formGroup.controls).forEach(key => {
+      const control = formGroup.get(key);
+      control?.markAsTouched();
+    });
   }
 }

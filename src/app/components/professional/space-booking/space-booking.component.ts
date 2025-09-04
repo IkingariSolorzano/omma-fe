@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
-import Swal from 'sweetalert2';
+import Swal, { SweetAlertResult } from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 import { ProfessionalService, CreateReservationRequest, Credits, Reservation } from '../../../services/professional.service';
 import { Space } from '../../../services/admin.service';
@@ -36,10 +36,7 @@ export class SpaceBookingComponent implements OnInit {
   spaceSchedules: any[] = [];
   
   // Booking state
-  selectedHour: HourSlot | null = null;
-  selectedSpace: Space | null = null;
-  selectedHourSlot: HourSlot | null = null;
-  selectedSpaceSlot: SpaceSlot | null = null;
+  selectedSlots: { hourSlot: HourSlot, spaceSlot: SpaceSlot }[] = [];
   showBookingConfirmation = false;
   showSpecialRequestConfirmation = false;
 
@@ -128,7 +125,7 @@ export class SpaceBookingComponent implements OnInit {
     let confirmButtonText = 'Sí, ¡cancelar!';
 
     if (state.hasPenalty) {
-      text = 'Se aplicará una penalización de 4 créditos por cancelación tardía.';
+      text = `Se aplicará una penalización de ${reservation.cost_credits} créditos (costo total de la reserva) por cancelación tardía.`;
     } else {
       text = 'No se aplicará ninguna penalización.';
     }
@@ -142,7 +139,7 @@ export class SpaceBookingComponent implements OnInit {
       cancelButtonColor: '#d33',
       confirmButtonText: confirmButtonText,
       cancelButtonText: 'No, mantener'
-    }).then((result) => {
+    }).then((result: SweetAlertResult) => {
       if (result.isConfirmed) {
         this.loading = true;
         this.professionalService.cancelReservation(reservation.id).subscribe({
@@ -318,7 +315,7 @@ export class SpaceBookingComponent implements OnInit {
       const dayOfWeek = date.getDay();
       const businessHour = this.businessHours.find(bh => bh.day_of_week === dayOfWeek);
       const isClosedDate = this.closedDates.some(cd => 
-        cd.date === date.toISOString().split('T')[0] && cd.is_active
+        cd.date === this.toISODateString(date) && cd.is_active
       );
       
       // Debug: Log each day's evaluation
@@ -458,6 +455,11 @@ export class SpaceBookingComponent implements OnInit {
 
   isSpaceAvailable(space: Space, hour: number): boolean {
     if (!this.selectedDate) return false;
+
+    const now = new Date();
+    if (this.isSameDay(this.selectedDate, now) && hour <= now.getHours()) {
+      return false; // The hour is in the past for today
+    }
     
     // Check if there's an existing reservation for this space, date, and hour
     const reservationDateTime = new Date(this.selectedDate);
@@ -485,98 +487,133 @@ export class SpaceBookingComponent implements OnInit {
 
   selectHourSpace(hourSlot: HourSlot, spaceSlot: SpaceSlot): void {
     if (!spaceSlot.isAvailable) return;
-    
-    // Clear previous selections
-    this.dayViewHours.forEach(hour => {
-      hour.spaces.forEach(space => space.isSelected = false);
-    });
-    
-    // Select the clicked slot
-    spaceSlot.isSelected = true;
-    this.selectedHourSlot = hourSlot;
-    this.selectedSpaceSlot = spaceSlot;
-    
-    // Check if this is a special request
-    if (spaceSlot.requiresSpecialApproval) {
-      this.showSpecialRequestConfirmation = true;
+
+    const selectionIndex = this.selectedSlots.findIndex(
+      s => s.hourSlot.hour === hourSlot.hour && s.spaceSlot.space.id === spaceSlot.space.id
+    );
+
+    if (selectionIndex > -1) {
+      // Deselect the slot
+      this.selectedSlots.splice(selectionIndex, 1);
+      spaceSlot.isSelected = false;
     } else {
-      this.showBookingConfirmation = true;
+      // Check if the new selection is for a different space
+      if (this.selectedSlots.length > 0 && this.selectedSlots[0].spaceSlot.space.id !== spaceSlot.space.id) {
+        // Clear existing selection if space is different
+        this.clearSelection();
+      }
+      // Add the new slot to the selection
+      this.selectedSlots.push({ hourSlot, spaceSlot });
+      spaceSlot.isSelected = true;
     }
+
+    // Sort selected slots by hour
+    this.selectedSlots.sort((a, b) => a.hourSlot.hour - b.hourSlot.hour);
+
+    // Show confirmation if there's any selection
+    this.showBookingConfirmation = this.selectedSlots.length > 0;
+    this.showSpecialRequestConfirmation = this.selectedSlots.length > 0 && this.selectedSlots.some(s => s.spaceSlot.requiresSpecialApproval);
   }
 
   confirmBooking(): void {
-    if (!this.selectedDate || !this.selectedHourSlot || !this.selectedSpaceSlot) return;
-    
+    if (!this.selectedDate || this.selectedSlots.length === 0) return;
+
     if (!this.hasEnoughCredits()) {
       this.error = 'No tienes suficientes créditos para esta reservación';
       return;
     }
-    
+
     this.loading = true;
     this.error = '';
     this.success = '';
-    
-    const startTime = new Date(this.selectedDate);
-    startTime.setHours(this.selectedHourSlot.hour, 0, 0, 0);
-    
-    const endTime = new Date(this.selectedDate);
-    endTime.setHours(this.selectedHourSlot.hour + 1, 0, 0, 0);
-    
-    const reservationData = {
-      space_id: this.selectedSpaceSlot.space.id,
-      start_time: startTime.toISOString(),
-      end_time: endTime.toISOString()
-    };
 
-    this.professionalService.createReservation(reservationData).subscribe({
-      next: (reservation) => {
-        this.success = 'Reservación creada exitosamente';
-        // Refresh credits and reservations, then update day list
+    const reservationsToCreate = this.selectedSlots.map(slot => {
+      const startTime = new Date(this.selectedDate!);
+      startTime.setHours(slot.hourSlot.hour, 0, 0, 0);
+      const endTime = new Date(this.selectedDate!);
+      endTime.setHours(slot.hourSlot.hour + 1, 0, 0, 0);
+      
+      // Format as local time instead of UTC to preserve timezone
+      const formatLocalDateTime = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}-06:00`;
+      };
+      
+      return {
+        space_id: slot.spaceSlot.space.id,
+        start_time: formatLocalDateTime(startTime),
+        end_time: formatLocalDateTime(endTime),
+      };
+    });
+
+    const creationObservables = reservationsToCreate.map(resData => this.professionalService.createReservation(resData));
+
+    forkJoin(creationObservables).subscribe({
+      next: () => {
+        this.success = 'Reservaciones creadas exitosamente';
         this.refreshAfterReservationChange();
       },
       error: (error) => {
-        this.error = error?.error?.error || 'Error al crear la reservación';
+        this.error = error?.error?.error || 'Error al crear las reservaciones';
         this.loading = false;
-        console.error('Error creating reservation:', error);
+        console.error('Error creating reservations:', error);
       }
     });
   }
 
   confirmSpecialRequest(): void {
-    if (!this.selectedDate || !this.selectedHourSlot || !this.selectedSpaceSlot) return;
-    
+    if (!this.selectedDate || this.selectedSlots.length === 0) return;
+
     this.loading = true;
     this.error = '';
     this.success = '';
-    
-    const startTime = new Date(this.selectedDate);
-    startTime.setHours(this.selectedHourSlot.hour, 0, 0, 0);
-    
-    const endTime = new Date(this.selectedDate);
-    endTime.setHours(this.selectedHourSlot.hour + 1, 0, 0, 0);
-    
-    const reservationData = {
-      space_id: this.selectedSpaceSlot.space.id,
-      start_time: startTime.toISOString(),
-      end_time: endTime.toISOString()
-    };
 
-    this.professionalService.createReservation(reservationData).subscribe({
-      next: (reservation) => {
-        this.success = 'Solicitud de reserva especial enviada. Espera la aprobación del administrador.';
+    const requestsToCreate = this.selectedSlots.map(slot => {
+      const startTime = new Date(this.selectedDate!);
+      startTime.setHours(slot.hourSlot.hour, 0, 0, 0);
+      const endTime = new Date(this.selectedDate!);
+      endTime.setHours(slot.hourSlot.hour + 1, 0, 0, 0);
+      
+      // Format as local time instead of UTC to preserve timezone
+      const formatLocalDateTime = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}-06:00`;
+      };
+      
+      return {
+        space_id: slot.spaceSlot.space.id,
+        start_time: formatLocalDateTime(startTime),
+        end_time: formatLocalDateTime(endTime),
+      };
+    });
+
+    const creationObservables = requestsToCreate.map(reqData => this.professionalService.createReservation(reqData));
+
+    forkJoin(creationObservables).subscribe({
+      next: () => {
+        this.success = 'Solicitudes de reserva especial enviadas. Espera la aprobación del administrador.';
         this.refreshAfterReservationChange();
       },
       error: (error) => {
-        this.error = error?.error?.error || 'Error al enviar la solicitud';
+        this.error = error?.error?.error || 'Error al enviar las solicitudes';
         this.loading = false;
-        console.error('Error creating special request:', error);
+        console.error('Error creating special requests:', error);
       }
     });
   }
 
   clearSelection(): void {
-    this.selectedHourSlot = null;
-    this.selectedSpaceSlot = null;
+    this.selectedSlots = [];
     this.showBookingConfirmation = false;
     this.showSpecialRequestConfirmation = false;
     
@@ -589,17 +626,26 @@ export class SpaceBookingComponent implements OnInit {
     this.clearSelection();
   }
 
+  getTotalCost(): number {
+    if (this.selectedSlots.length === 0) return 0;
+    return this.selectedSlots.reduce((acc, slot) => {
+      const cost = slot.spaceSlot.requiresSpecialApproval
+        ? slot.spaceSlot.space.cost_credits + 1
+        : slot.spaceSlot.space.cost_credits;
+      return acc + cost;
+    }, 0);
+  }
+
   hasEnoughCredits(): boolean {
-    if (!this.credits || !this.selectedSpaceSlot) return false;
-    const totalCost = this.selectedSpaceSlot.requiresSpecialApproval 
-      ? this.selectedSpaceSlot.space.cost_credits + 1 
-      : this.selectedSpaceSlot.space.cost_credits;
+    if (!this.credits || this.selectedSlots.length === 0) return false;
+
+    const totalCost = this.getTotalCost();
+
     return this.credits.active >= totalCost;
   }
 
   resetSelection(): void {
-    this.selectedHour = null;
-    this.selectedSpace = null;
+    this.selectedSlots = [];
     this.dayViewHours.forEach(h => {
       h.spaces.forEach(s => s.isSelected = false);
     });
@@ -658,6 +704,13 @@ export class SpaceBookingComponent implements OnInit {
 
   selectReservationForDetail(reservation: Reservation): void {
     this.selectedReservationForDetail = reservation;
+  }
+
+  private toISODateString(date: Date): string {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   getSpaceSlotClass(spaceSlot: SpaceSlot): string {

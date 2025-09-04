@@ -30,7 +30,9 @@
     </div>
   </div>
 
-  <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+  <div class="max-w-full mx-auto py-6 sm:px-6 lg:px-8"> 
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8"> 
+      <div class="lg:col-span-2"> 
     <!-- Error Messages -->
     <div *ngIf="error" class="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
       {{ error }}
@@ -102,7 +104,10 @@
           <!-- Calendar Days -->
           <ng-container *ngFor="let week of calendarWeeks">
             <div *ngFor="let day of week.days" 
-                 class="bg-white min-h-[120px] p-2 relative"
+                 (click)="selectDay(day)"
+                 class="bg-white min-h-[120px] p-2 relative transition-colors duration-200 cursor-pointer"
+                 [class.border-2]="isSelected(day)"
+                 [class.border-blue-500]="isSelected(day)"
                  [class.bg-gray-50]="!day.isCurrentMonth"
                  [class.bg-blue-50]="day.isToday"
                  [class.opacity-50]="!day.isEnabled"
@@ -198,6 +203,76 @@
       </div>
     </div>
 
+      </div>
+
+      <!-- Right Column: Selected Day Details -->
+      <div class="lg:col-span-1">
+        <div class="bg-white shadow rounded-lg sticky top-6">
+          <div *ngIf="selectedDay" class="p-4">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">
+              Detalles para {{ selectedDay.date | date:'fullDate' }}
+            </h3>
+
+            <div *ngIf="!selectedDay.isEnabled" class="text-center py-10">
+                <p class="text-gray-500 font-semibold">Día cerrado</p>
+                <p class="text-sm text-gray-400">No hay reservaciones disponibles.</p>
+            </div>
+
+            <div *ngIf="selectedDay.isEnabled">
+                <!-- Botón para agendar nueva reserva -->
+                <div class="mb-4">
+                  <button (click)="openBookingModal()" 
+                          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Agendar Espacio
+                  </button>
+                </div>
+                
+                <div *ngIf="selectedDay.slots.length > 0; else noReservations" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                    <div *ngFor="let slot of selectedDay.slots | slice:0:100" 
+                         class="p-3 rounded-lg border text-xs" 
+                         [class]="getSlotStatusClass(slot.status)">
+                      <div class="font-bold text-sm mb-1">{{ slot.space_name }}</div>
+                      <div class="flex items-center mb-1">
+                        <svg class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>{{ slot.start_time | date:'HH:mm' }} - {{ slot.end_time | date:'HH:mm' }}</span>
+                      </div>
+                      <div *ngIf="slot.user_name" class="flex items-center">
+                        <svg class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        <span>{{ slot.user_name }}</span>
+                      </div>
+                      <div class="mt-2 text-right">
+                        <span class="px-2 py-1 font-semibold rounded-full text-xs"
+                              [ngClass]="{
+                                'bg-green-100 text-green-800': slot.status === 'available',
+                                'bg-yellow-100 text-yellow-800': slot.status === 'reserved' || slot.status === 'pending',
+                                'bg-red-100 text-red-800': slot.status === 'occupied' || slot.status === 'cancelled',
+                                'bg-blue-100 text-blue-800': slot.status === 'confirmed',
+                                'bg-gray-100 text-gray-800': !['available', 'reserved', 'occupied', 'confirmed', 'pending', 'cancelled'].includes(slot.status)
+                              }">
+                          {{ getStatusLabel(slot.status) }}
+                        </span>
+                      </div>
+                    </div>
+                </div>
+                <ng-template #noReservations>
+                    <div class="text-center py-10">
+                        <p class="text-gray-500 font-semibold">No hay reservaciones</p>
+                        <p class="text-sm text-gray-400">Este día no tiene eventos programados.</p>
+                    </div>
+                </ng-template>
+            </div>
+
+          </div>
+          <div *ngIf="!selectedDay" class="p-6 text-center">
+            <p class="text-gray-500">Selecciona un día para ver los detalles.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Legend -->
     <div class="bg-white shadow rounded-lg mt-6">
       <div class="px-4 py-5 sm:p-6">
@@ -214,6 +289,161 @@
           <div class="flex items-center">
             <div class="w-4 h-4 bg-red-100 border border-red-200 rounded mr-2"></div>
             <span class="text-sm text-gray-700">Ocupado</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para agendar reserva -->
+    <div *ngIf="showBookingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+          <!-- Header del modal -->
+          <div class="flex justify-between items-center pb-3 border-b">
+            <h3 class="text-lg font-bold text-gray-900">
+              Agendar Espacio - {{ selectedDay?.date | date:'fullDate' }}
+            </h3>
+            <button (click)="closeBookingModal()" title="Cerrar modal" class="text-gray-400 hover:text-gray-600">
+              <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Contenido del modal -->
+          <div class="mt-4">
+            <form [formGroup]="bookingForm" (ngSubmit)="createReservation()" class="space-y-4">
+              <!-- Información del cliente -->
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <h4 class="text-md font-semibold text-gray-900 mb-3">Información del Cliente</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre completo *</label>
+                    <input 
+                      type="text" 
+                      formControlName="clientName"
+                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      [class.border-red-500]="bookingForm.get('clientName')?.invalid && bookingForm.get('clientName')?.touched"
+                      placeholder="Nombre del cliente">
+                    <p *ngIf="bookingForm.get('clientName')?.invalid && bookingForm.get('clientName')?.touched" 
+                       class="text-sm text-red-600 mt-1">El nombre es requerido</p>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
+                    <input 
+                      type="tel" 
+                      formControlName="clientPhone"
+                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      [class.border-red-500]="bookingForm.get('clientPhone')?.invalid && bookingForm.get('clientPhone')?.touched"
+                      placeholder="Número de teléfono">
+                    <p *ngIf="bookingForm.get('clientPhone')?.invalid && bookingForm.get('clientPhone')?.touched" 
+                       class="text-sm text-red-600 mt-1">El teléfono es requerido</p>
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+                    <input 
+                      type="email" 
+                      formControlName="clientEmail"
+                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                      placeholder="correo@ejemplo.com">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Selección de espacio y horario -->
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <h4 class="text-md font-semibold text-gray-900 mb-3">Detalles de la Reserva</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Espacio *</label>
+                    <select 
+                      (change)="onSpaceChange($event)" 
+                      title="Seleccionar espacio"
+                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      [class.border-red-500]="bookingForm.get('spaceId')?.invalid && bookingForm.get('spaceId')?.touched">
+                      <option value="">Seleccionar espacio</option>
+                      <option *ngFor="let space of spaces" [value]="space.id">{{ space.name }}</option>
+                    </select>
+                    <p *ngIf="bookingForm.get('spaceId')?.invalid && bookingForm.get('spaceId')?.touched" 
+                       class="text-sm text-red-600 mt-1">Debe seleccionar un espacio</p>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Duración (horas) *</label>
+                    <select 
+                      formControlName="duration"
+                      title="Seleccionar duración"
+                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <option value="1">1 hora</option>
+                      <option value="2">2 horas</option>
+                      <option value="3">3 horas</option>
+                      <option value="4">4 horas</option>
+                      <option value="5">5 horas</option>
+                      <option value="6">6 horas</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Hora de inicio *</label>
+                    <select 
+                      formControlName="startHour"
+                      title="Seleccionar hora de inicio"
+                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                      [class.border-red-500]="bookingForm.get('startHour')?.invalid && bookingForm.get('startHour')?.touched"
+                      [disabled]="!selectedSpaceId">
+                      <option value="">{{ selectedSpaceId ? 'Seleccionar hora' : 'Primero selecciona un espacio' }}</option>
+                      <option *ngFor="let hour of availableHours" [value]="hour">{{ hour }}</option>
+                    </select>
+                    <p *ngIf="selectedSpaceId && availableHours.length === 0" class="text-sm text-red-600 mt-1">
+                      No hay horarios disponibles para este espacio en la fecha seleccionada.
+                    </p>
+                    <p *ngIf="bookingForm.get('startHour')?.invalid && bookingForm.get('startHour')?.touched" 
+                       class="text-sm text-red-600 mt-1">Debe seleccionar una hora</p>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                    <select 
+                      formControlName="status"
+                      title="Seleccionar estado de la reserva"
+                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <option value="confirmed">Confirmada</option>
+                      <option value="pending">Pendiente</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Notas adicionales -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Notas adicionales</label>
+                <textarea 
+                  rows="3" 
+                  formControlName="notes"
+                  class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                  placeholder="Información adicional sobre la reserva..."></textarea>
+              </div>
+
+              <!-- Error message -->
+              <div *ngIf="error" class="bg-red-50 border border-red-200 rounded-md p-3">
+                <p class="text-sm text-red-600">{{ error }}</p>
+              </div>
+
+              <!-- Botones del modal -->
+              <div class="flex justify-end space-x-3 pt-4 border-t mt-6">
+                <button 
+                  type="button"
+                  (click)="closeBookingModal()" 
+                  class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
+                  [disabled]="isSubmitting">
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  [disabled]="bookingForm.invalid || isSubmitting">
+                  <span *ngIf="isSubmitting">Creando...</span>
+                  <span *ngIf="!isSubmitting">Crear Reserva</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>

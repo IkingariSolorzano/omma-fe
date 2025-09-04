@@ -13,11 +13,11 @@ import { ProfessionalService, Credits } from '../../services/professional.servic
       <!-- Header -->
       <header class="bg-white shadow">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex justify-between items-center py-6">
+          <div class="flex justify-between items-center flex-wrap gap-4 py-6">
             <div class="flex items-center">
               <h1 class="text-3xl font-bold text-gray-900">Mi Panel</h1>
             </div>
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center flex-wrap gap-4">
               <div *ngIf="credits" class="text-sm text-gray-600">
                 <span class="font-medium">{{ credits.active }}</span> créditos activos
               </div>
@@ -35,7 +35,7 @@ import { ProfessionalService, Credits } from '../../services/professional.servic
       <!-- Navigation -->
       <nav class="bg-blue-600">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex space-x-8">
+          <div class="flex flex-wrap gap-x-8 gap-y-2">
             <a routerLink="/dashboard" 
                routerLinkActive="bg-blue-700" 
                [routerLinkActiveOptions]="{exact: true}"
