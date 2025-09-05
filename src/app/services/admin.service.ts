@@ -307,7 +307,7 @@ export class AdminService {
 
   // Space Management
   createSpace(spaceData: CreateSpaceRequest): Observable<Space> {
-    return this.http.post<Space>(`${this.apiUrl}/spaces`, spaceData);
+    return this.http.post<Space>(`${this.apiUrl}/admin/spaces`, spaceData);
   }
 
   getAllSpaces(): Observable<Space[]> {
