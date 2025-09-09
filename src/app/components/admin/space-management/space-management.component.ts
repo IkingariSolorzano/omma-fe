@@ -18,7 +18,9 @@ export class SpaceManagementComponent implements OnInit {
   error = '';
   success = '';
   showCreateForm = false;
+  showEditForm = false;
   showScheduleForm = false;
+  editingSpace: Space | null = null;
   selectedSpaceId: number | null = null;
   weeklySchedule: WeeklyScheduleDay[] = [];
   existingSchedules: Schedule[] = [];
@@ -128,6 +130,64 @@ export class SpaceManagementComponent implements OnInit {
           this.loading = false;
           this.error = error?.error?.error || 'Error al crear horario';
           console.error('Error creating schedule:', error);
+        }
+      });
+    }
+  }
+
+  toggleEditForm(space?: Space): void {
+    this.showEditForm = !this.showEditForm;
+    if (this.showEditForm && space) {
+      this.editingSpace = space;
+      this.spaceForm.patchValue({
+        name: space.name,
+        description: space.description,
+        capacity: space.capacity,
+        cost_credits: space.cost_credits
+      });
+    } else {
+      this.editingSpace = null;
+      this.spaceForm.reset();
+      this.spaceForm.patchValue({ capacity: 1, cost_credits: 9 });
+    }
+    this.error = '';
+    this.success = '';
+  }
+
+  onSubmitEditSpace(): void {
+    if (this.spaceForm.valid && this.editingSpace) {
+      this.loading = true;
+      this.error = '';
+      this.success = '';
+
+      const spaceData: CreateSpaceRequest = this.spaceForm.value;
+
+      this.adminService.updateSpace(this.editingSpace.id, spaceData).subscribe({
+        next: (space) => {
+          this.loading = false;
+          this.success = 'Espacio actualizado exitosamente';
+          this.toggleEditForm();
+          this.loadSpaces();
+        },
+        error: (error) => {
+          this.loading = false;
+          this.error = error?.error?.error || 'Error al actualizar espacio';
+          console.error('Error updating space:', error);
+        }
+      });
+    }
+  }
+
+  onDeleteSpace(space: Space): void {
+    if (confirm(`¿Estás seguro de que deseas eliminar el espacio "${space.name}"? Esta acción no se puede deshacer.`)) {
+      this.adminService.deleteSpace(space.id).subscribe({
+        next: () => {
+          this.success = 'Espacio eliminado exitosamente';
+          this.loadSpaces();
+        },
+        error: (error) => {
+          this.error = error?.error?.error || 'Error al eliminar espacio';
+          console.error('Error deleting space:', error);
         }
       });
     }

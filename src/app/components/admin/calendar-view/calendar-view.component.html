@@ -31,32 +31,38 @@
   </div>
 
   <div class="max-w-full mx-auto py-6 sm:px-6 lg:px-8"> 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8"> 
-      <div class="lg:col-span-2"> 
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8"> 
+      <div class="lg:col-span-9"> 
     <!-- Error Messages -->
     <div *ngIf="error" class="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
       {{ error }}
     </div>
 
-    <!-- Filters -->
+    <!-- Space Selection Panel -->
     <div class="bg-white shadow rounded-lg mb-6">
       <div class="px-4 py-5 sm:p-6">
-        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Filtros</h3>
-        <form [formGroup]="filterForm">
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <div>
-              <label for="space_ids" class="block text-sm font-medium text-gray-700">Espacios</label>
-              <select 
-                id="space_ids"
-                formControlName="space_ids"
-                (change)="onFilterChange()"
-                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                <option value="">Todos los espacios</option>
-                <option *ngFor="let space of spaces" [value]="space.id">{{ space.name }}</option>
-              </select>
-            </div>
-          </div>
-        </form>
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Seleccionar Espacio</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
+          <!-- Botón Todos -->
+          <button
+            (click)="selectSpaceFilter('')"
+            [class]="filterForm.get('space_ids')?.value === '' ? 'bg-blue-700 hover:bg-blue-800 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'"
+            class="rounded-lg text-center transition-colors">
+            <fa-icon [icon]="faThLarge" class="h-5 w-5 mx-auto mb-1"></fa-icon>
+            <div class="text-sm font-medium">Todos</div>
+          </button>
+
+          <!-- Botones de espacios usando @for -->
+          @for (space of spaces; track space.id) {
+            <button
+              (click)="selectSpaceFilter(space.id.toString())"
+              [class]="filterForm.get('space_ids')?.value === space.id.toString() ? 'bg-blue-700 hover:bg-blue-800 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'"
+              class="rounded-lg text-center transition-colors">
+              <fa-icon [icon]="faBuilding" class="h-5 w-5 mx-auto mb-1"></fa-icon>
+              <div class="text-sm font-medium truncate" [title]="space.name">{{ space.name }}</div>
+            </button>
+          }
+        </div>
       </div>
     </div>
 
@@ -205,46 +211,46 @@
 
       </div>
 
-      <!-- Right Column: Selected Day Details -->
-      <div class="lg:col-span-1">
+      <!-- Right Column: Selected Day Details (Reduced) -->
+      <div class="lg:col-span-3">
         <div class="bg-white shadow rounded-lg sticky top-6">
-          <div *ngIf="selectedDay" class="p-4">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">
+          <div *ngIf="selectedDay" class="p-3">
+            <h3 class="text-base font-bold text-gray-900 mb-3">
               Detalles para {{ selectedDay.date | date:'fullDate' }}
             </h3>
 
-            <div *ngIf="!selectedDay.isEnabled" class="text-center py-10">
-                <p class="text-gray-500 font-semibold">Día cerrado</p>
-                <p class="text-sm text-gray-400">No hay reservaciones disponibles.</p>
+            <div *ngIf="!selectedDay.isEnabled" class="text-center py-6">
+                <p class="text-gray-500 font-semibold text-sm">Día cerrado</p>
+                <p class="text-xs text-gray-400">No hay reservaciones disponibles.</p>
             </div>
 
             <div *ngIf="selectedDay.isEnabled">
                 <!-- Botón para agendar nueva reserva -->
-                <div class="mb-4">
-                  <button (click)="openBookingModal()" 
-                          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
-                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="mb-3">
+                  <button (click)="openBookingModal()"
+                          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center text-sm">
+                    <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
-                    Agendar Espacio
+                    Agendar
                   </button>
                 </div>
-                
-                <div *ngIf="selectedDay.slots.length > 0; else noReservations" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                    <div *ngFor="let slot of selectedDay.slots | slice:0:100" 
-                         class="p-3 rounded-lg border text-xs" 
+
+                <div *ngIf="selectedDay.slots.length > 0; else noReservations" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+                    <div *ngFor="let slot of selectedDay.slots | slice:0:100"
+                         class="p-2 rounded-lg border text-xs"
                          [class]="getSlotStatusClass(slot.status)">
-                      <div class="font-bold text-sm mb-1">{{ slot.space_name }}</div>
+                      <div class="font-bold text-xs mb-1">{{ slot.space_name }}</div>
                       <div class="flex items-center mb-1">
-                        <svg class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         <span>{{ slot.start_time | date:'HH:mm' }} - {{ slot.end_time | date:'HH:mm' }}</span>
                       </div>
                       <div *ngIf="slot.user_name" class="flex items-center">
-                        <svg class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                        <span>{{ slot.user_name }}</span>
+                        <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        <span class="text-xs">{{ slot.user_name }}</span>
                       </div>
-                      <div class="mt-2 text-right">
-                        <span class="px-2 py-1 font-semibold rounded-full text-xs"
+                      <div class="mt-1 text-right">
+                        <span class="px-1.5 py-0.5 font-semibold rounded-full text-xs"
                               [ngClass]="{
                                 'bg-green-100 text-green-800': slot.status === 'available',
                                 'bg-yellow-100 text-yellow-800': slot.status === 'reserved' || slot.status === 'pending',
@@ -258,16 +264,16 @@
                     </div>
                 </div>
                 <ng-template #noReservations>
-                    <div class="text-center py-10">
-                        <p class="text-gray-500 font-semibold">No hay reservaciones</p>
-                        <p class="text-sm text-gray-400">Este día no tiene eventos programados.</p>
+                    <div class="text-center py-4">
+                        <p class="text-gray-500 font-semibold text-sm">No hay reservaciones</p>
+                        <p class="text-xs text-gray-400">Este día no tiene eventos programados.</p>
                     </div>
                 </ng-template>
             </div>
 
           </div>
-          <div *ngIf="!selectedDay" class="p-6 text-center">
-            <p class="text-gray-500">Selecciona un día para ver los detalles.</p>
+          <div *ngIf="!selectedDay" class="p-4 text-center">
+            <p class="text-gray-500 text-sm">Selecciona un día para ver los detalles.</p>
           </div>
         </div>
       </div>
@@ -301,7 +307,7 @@
           <!-- Header del modal -->
           <div class="flex justify-between items-center pb-3 border-b">
             <h3 class="text-lg font-bold text-gray-900">
-              Agendar Espacio - {{ selectedDay?.date | date:'fullDate' }}
+              Agendar Espacio - <span class="text-red-600 font-bold">{{ selectedDay?.date | date:'fullDate' }}</span>
             </h3>
             <button (click)="closeBookingModal()" title="Cerrar modal" class="text-gray-400 hover:text-gray-600">
               <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,7 +322,8 @@
               <!-- Información del cliente -->
               <div class="bg-gray-50 p-4 rounded-lg">
                 <h4 class="text-md font-semibold text-gray-900 mb-3">Información del Cliente</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-4">
+                  <!-- Nombre completo - 1 fila -->
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nombre completo *</label>
                     <input 
@@ -328,45 +335,87 @@
                     <p *ngIf="bookingForm.get('clientName')?.invalid && bookingForm.get('clientName')?.touched" 
                        class="text-sm text-red-600 mt-1">El nombre es requerido</p>
                   </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
-                    <input 
-                      type="tel" 
-                      formControlName="clientPhone"
-                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      [class.border-red-500]="bookingForm.get('clientPhone')?.invalid && bookingForm.get('clientPhone')?.touched"
-                      placeholder="Número de teléfono">
-                    <p *ngIf="bookingForm.get('clientPhone')?.invalid && bookingForm.get('clientPhone')?.touched" 
-                       class="text-sm text-red-600 mt-1">El teléfono es requerido</p>
-                  </div>
-                  <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
-                    <input 
-                      type="email" 
-                      formControlName="clientEmail"
-                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                      placeholder="correo@ejemplo.com">
+                  
+                  <!-- Teléfono y correo - 1 fila, 2 columnas -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
+                      <input 
+                        type="tel" 
+                        maxlength="10"
+                        formControlName="clientPhone"
+                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        [class.border-red-500]="bookingForm.get('clientPhone')?.invalid && bookingForm.get('clientPhone')?.touched"
+                        placeholder="Número de teléfono">
+                      <p *ngIf="bookingForm.get('clientPhone')?.invalid && bookingForm.get('clientPhone')?.touched" 
+                         class="text-sm text-red-600 mt-1">El teléfono es requerido</p>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+                      <input 
+                        type="email" 
+                        formControlName="clientEmail"
+                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                        placeholder="correo@ejemplo.com">
+                    </div>
                   </div>
                 </div>
               </div>
 
               <!-- Selección de espacio y horario -->
               <div class="bg-gray-50 p-4 rounded-lg">
-                <h4 class="text-md font-semibold text-gray-900 mb-3">Detalles de la Reserva</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Espacio *</label>
-                    <select 
-                      (change)="onSpaceChange($event)" 
-                      title="Seleccionar espacio"
-                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      [class.border-red-500]="bookingForm.get('spaceId')?.invalid && bookingForm.get('spaceId')?.touched">
-                      <option value="">Seleccionar espacio</option>
-                      <option *ngFor="let space of spaces" [value]="space.id">{{ space.name }}</option>
-                    </select>
-                    <p *ngIf="bookingForm.get('spaceId')?.invalid && bookingForm.get('spaceId')?.touched" 
-                       class="text-sm text-red-600 mt-1">Debe seleccionar un espacio</p>
+                <h4 class="text-md font-semibold text-gray-900 mb-3">Seleccionar Espacio *</h4>
+                
+                <!-- Grid visual de espacios -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                  <div 
+                    *ngFor="let space of spaces" 
+                    class="border-2 rounded-lg p-4 cursor-pointer transition-all duration-200 hover:shadow-md"
+                    [class.border-blue-500]="selectedSpaceId === space.id"
+                    [class.bg-blue-50]="selectedSpaceId === space.id"
+                    [class.border-gray-300]="selectedSpaceId !== space.id"
+                    [class.bg-white]="selectedSpaceId !== space.id"
+                    (click)="selectSpace(space.id)">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <h5 class="font-medium text-gray-900">{{ space.name }}</h5>
+                        <p class="text-sm text-gray-600">{{ space.description || 'Espacio disponible' }}</p>
+                      </div>
+                      <div class="flex-shrink-0">
+                        <div 
+                          class="w-4 h-4 rounded-full border-2"
+                          [class.border-blue-500]="selectedSpaceId === space.id"
+                          [class.bg-blue-500]="selectedSpaceId === space.id"
+                          [class.border-gray-300]="selectedSpaceId !== space.id">
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                </div>
+                
+                <p *ngIf="bookingForm.get('spaceId')?.invalid && bookingForm.get('spaceId')?.touched" 
+                   class="text-sm text-red-600 mb-3">Debe seleccionar un espacio</p>
+                
+                <!-- Horario disponible cuando se selecciona un espacio -->
+                <div *ngIf="selectedSpaceId" class="mt-4">
+                  <h5 class="text-sm font-medium text-gray-900 mb-2">Horarios Disponibles</h5>
+                  <div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 mb-4">
+                    <button
+                      *ngFor="let hour of availableHours"
+                      type="button"
+                      class="px-3 py-2 text-sm border rounded-md transition-colors duration-200"
+                      [class.border-blue-500]="bookingForm.get('startHour')?.value === hour"
+                      [class.bg-blue-50]="bookingForm.get('startHour')?.value === hour"
+                      [class.text-blue-700]="bookingForm.get('startHour')?.value === hour"
+                      [class.border-gray-300]="bookingForm.get('startHour')?.value !== hour"
+                      [class.hover:bg-gray-50]="bookingForm.get('startHour')?.value !== hour"
+                      (click)="selectHour(hour)">
+                      {{ hour }}
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Duración (horas) *</label>
                     <select 

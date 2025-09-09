@@ -9,7 +9,7 @@ export interface CreateUserRequest {
   password: string;
   name: string;
   phone: string;
-  role: 'professional';
+  role: 'admin' | 'professional';
   specialty?: string;
   description?: string;
 }
@@ -324,6 +324,14 @@ export class AdminService {
     );
   }
 
+  updateSpace(spaceId: number, spaceData: CreateSpaceRequest): Observable<Space> {
+    return this.http.put<Space>(`${this.apiUrl}/admin/spaces/${spaceId}`, spaceData);
+  }
+
+  deleteSpace(spaceId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/admin/spaces/${spaceId}`);
+  }
+
   // Schedules
   getSchedules(): Observable<Schedule[]> {
     console.log('AdminService: Making API call to get schedules');
@@ -420,7 +428,7 @@ export class AdminService {
     if (cancelData) {
       return this.http.put(`${this.apiUrl}/admin/reservations/${reservationId}/cancel`, cancelData);
     }
-    return this.http.delete(`${this.apiUrl}/reservations/${reservationId}`);
+    return this.http.delete(`${this.apiUrl}/admin/reservations/${reservationId}`);
   }
 
   // Calendar Management
@@ -444,6 +452,7 @@ export class AdminService {
   getDashboardStats(): Observable<any> {
     return this.http.get(`${this.apiUrl}/admin/dashboard/stats`);
   }
+
 
   getRecentActivity(): Observable<any> {
     return this.http.get(`${this.apiUrl}/admin/dashboard/activity`);
@@ -479,14 +488,13 @@ export class AdminService {
     return this.http.delete(`${this.apiUrl}/admin/closed-dates/${id}`);
   }
 
+  updateReservation(reservationId: number, updateData: UpdateReservationRequest): Observable<Reservation> {
+    return this.http.put<Reservation>(`${this.apiUrl}/admin/reservations/${reservationId}`, updateData);
+  }
+
   // External Client Reservations
   createExternalReservation(reservation: CreateExternalReservationRequest): Observable<any> {
     return this.http.post(`${this.apiUrl}/admin/reservations/external`, reservation);
-  }
-
-  // Update Reservation
-  updateReservation(reservationId: number, updateData: UpdateReservationRequest): Observable<Reservation> {
-    return this.http.put<Reservation>(`${this.apiUrl}/admin/reservations/${reservationId}`, updateData);
   }
 }
 

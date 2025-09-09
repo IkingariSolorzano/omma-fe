@@ -1,265 +1,245 @@
-  <!-- Main Content -->
-  <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-    <!-- Error Messages -->
-    <div *ngIf="error" class="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
-      {{ error }}
+<!-- Main Content -->
+<div class="mx-auto py-3 sm:px-6 lg:px-8">
+  <!-- Error Messages -->
+  <div
+    *ngIf="error"
+    class="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md"
+  >
+    {{ error }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="bg-white shadow rounded-lg">
+    <div class="px-4 py-5 sm:p-6 text-center">
+      <div
+        class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"
+      ></div>
+      <!-- Header and Navigation moved to AdminLayout -->
     </div>
+  </div>
 
-    <!-- Loading State -->
-    <div *ngIf="loading" class="bg-white shadow rounded-lg">
-      <div class="px-4 py-5 sm:p-6 text-center">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-        <!-- Header and Navigation moved to AdminLayout -->
-      </div>
-    </div>
+  <!-- Dashboard Layout -->
+  <div *ngIf="!loading" class="space-y-6">
+    <!-- Quick Actions - Top Row -->
+    <div class="bg-white shadow rounded-lg">
+      <div class="px-4 py-3 sm:p-6">
+        <h3 class="text-lg leading-3 font-medium text-gray-900 mb-4">
+          Acciones Rápidas
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
+          <button
+            routerLink="/admin/users"
+            class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-center transition-colors"
+          >
+            <fa-icon
+              [icon]="faUserFriends"
+              class="h-5 w-5 mx-auto mb-1"
+            ></fa-icon>
+            <div class="text-sm font-medium">Gestionar Usuarios</div>
+          </button>
 
-    <!-- Dashboard Stats -->
-    <div *ngIf="!loading" class="px-4 py-6 sm:px-0">
-      <!-- User Stats -->
-      <div class="mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Estadísticas de Usuarios</h2>
-        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <svg class="h-6 w-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                  </svg>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Usuarios Registrados</dt>
-                    <dd class="text-lg font-medium text-gray-900">{{ stats.usuarios_registrados || 0 }}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
+          <button
+            routerLink="/admin/spaces"
+            class="bg-green-600 hover:bg-green-700 text-white rounded-lg text-center transition-colors"
+          >
+            <fa-icon [icon]="faHospital" class="h-5 w-5 mx-auto mb-1"></fa-icon>
+            <div class="text-sm font-medium">Gestionar Espacios</div>
+          </button>
 
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <svg class="h-6 w-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                  </svg>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Con Créditos</dt>
-                    <dd class="text-lg font-medium text-gray-900">{{ stats.usuarios_con_creditos || 0 }}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
+          <button
+            routerLink="/admin/reservations"
+            class="bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-center transition-colors"
+          >
+            <fa-icon
+              [icon]="faClipboardList"
+              class="h-5 w-5 mx-auto mb-1"
+            ></fa-icon>
+            <div class="text-sm font-medium">Aprobar Reservaciones</div>
+          </button>
 
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <svg class="h-6 w-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Créditos por Vencer</dt>
-                    <dd class="text-lg font-medium text-gray-900">{{ stats.usuarios_con_creditos_por_vencer || 0 }}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
+          <button
+            routerLink="/admin/calendar"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-center transition-colors"
+          >
+            <fa-icon
+              [icon]="faCalendarAlt"
+              class="h-5 w-5 mx-auto mb-1"
+            ></fa-icon>
+            <div class="text-sm font-medium">Ver Calendario</div>
+          </button>
 
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <svg class="h-6 w-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Créditos Vencidos</dt>
-                    <dd class="text-lg font-medium text-gray-900">{{ stats.usuarios_con_creditos_vencidos || 0 }}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
-                  </svg>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Sin Créditos</dt>
-                    <dd class="text-lg font-medium text-gray-900">{{ stats.usuarios_sin_creditos || 0 }}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
+          <button
+            routerLink="/admin/business-hours"
+            class="bg-orange-600 hover:bg-orange-700 text-white p-2 rounded-lg text-center transition-colors md:col-span-1"
+          >
+            <fa-icon [icon]="faCog" class="h-6 w-6 mx-auto mb-2"></fa-icon>
+            <div class="text-sm font-medium">Horarios</div>
+          </button>
         </div>
       </div>
+    </div>
 
-      <!-- Space Stats -->
-      <div class="mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Estadísticas de Espacios</h2>
-        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <svg class="h-6 w-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                  </svg>
+    <!-- Collapsible Statistics Card -->
+    <div class="bg-white shadow rounded-lg">
+      <div class="px-4 py-3 sm:p-6">
+        <button
+          (click)="toggleStatistics()"
+          class="w-full flex items-center justify-between text-left"
+        >
+          <h3 class="text-lg font-medium text-gray-900">
+            Estadísticas Semanales
+          </h3>
+          <fa-icon
+            [icon]="statisticsExpanded ? faChevronUp : faChevronDown"
+            class="h-5 w-5 text-gray-400 transition-transform"
+          >
+          </fa-icon>
+        </button>
+
+        <!-- Statistics Content -->
+        <div *ngIf="statisticsExpanded" class="mt-6 space-y-6">
+          <!-- Weekly Hours Stats -->
+          <div>
+            <h4 class="text-md font-semibold text-gray-900 mb-4">Estadísticas de Horas (Semanal)</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="flex items-center p-3 bg-blue-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faCalendarWeek" class="h-5 w-5 text-blue-400"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Horas Potenciales</p>
+                  <p class="text-sm font-semibold text-blue-600">{{ stats.weekly_hours_potential | number : "1.0-0" }}</p>
                 </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Total Consultorios</dt>
-                    <dd class="text-lg font-medium text-gray-900">{{ stats.total_consultorios || 0 }}</dd>
-                  </dl>
+              </div>
+              <div class="flex items-center p-3 bg-orange-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faClock" class="h-5 w-5 text-orange-400"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Horas Reservadas</p>
+                  <p class="text-sm font-semibold text-orange-600">{{ stats.weekly_hours_reserved | number : "1.0-0" }}</p>
+                </div>
+              </div>
+              <div class="flex items-center p-3 bg-green-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faCheckCircle" class="h-5 w-5 text-green-400"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Horas Disponibles</p>
+                  <p class="text-sm font-semibold text-green-600">{{ stats.weekly_hours_available | number : "1.0-0" }}</p>
+                </div>
+              </div>
+              <div class="flex items-center p-3 bg-purple-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faClipboardList" class="h-5 w-5 text-purple-400"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Total Reservaciones</p>
+                  <p class="text-sm font-semibold text-purple-600">{{ stats.weekly_reservations_count }}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <svg class="h-6 w-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
+          <!-- Weekly Reservations & Operations -->
+          <div>
+            <h4 class="text-md font-semibold text-gray-900 mb-4">Operaciones Semanales</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="flex items-center p-3 bg-indigo-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faUserCheck" class="h-5 w-5 text-indigo-400"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Reservas Externas</p>
+                  <p class="text-sm font-semibold text-indigo-600">{{ stats.weekly_external_reservations }}</p>
                 </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Horas del Día</dt>
-                    <dd class="text-lg font-medium text-gray-900">{{ stats.total_horas_del_dia || 0 }}</dd>
-                  </dl>
+              </div>
+              <div class="flex items-center p-3 bg-red-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faTimes" class="h-5 w-5 text-red-400"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Cancelaciones</p>
+                  <p class="text-sm font-semibold text-red-600">{{ stats.weekly_cancellations }}</p>
+                </div>
+              </div>
+              <div class="flex items-center p-3 bg-yellow-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faHourglass" class="h-5 w-5 text-yellow-400"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Reservas Pendientes</p>
+                  <p class="text-sm font-semibold text-yellow-600">{{ stats.pending_reservations_count }}</p>
+                </div>
+              </div>
+              <div class="flex items-center p-3 bg-blue-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faBuilding" class="h-5 w-5 text-blue-400"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Total Consultorios</p>
+                  <p class="text-sm font-semibold text-blue-600">{{ stats.total_active_spaces }}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <svg class="h-6 w-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                  </svg>
+          <!-- Weekly Financial Stats -->
+          <div>
+            <h4 class="text-md font-semibold text-gray-900 mb-4">Estadísticas Financieras (Semanal)</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="flex items-center p-3 bg-green-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faChartLine" class="h-5 w-5 text-green-400"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Ingresos</p>
+                  <p class="text-sm font-semibold text-green-600">${{ stats.weekly_income | number : "1.2-2" }}</p>
                 </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Espacios Semana</dt>
-                    <dd class="text-lg font-medium text-gray-900">{{ stats.total_espacios_semana || 0 }}</dd>
-                  </dl>
+              </div>
+              <div class="flex items-center p-3 bg-blue-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faCreditCard" class="h-5 w-5 text-blue-500"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Créditos Comprados</p>
+                  <p class="text-sm font-semibold text-blue-600">{{ stats.weekly_credits_purchased }}</p>
+                </div>
+              </div>
+              <div class="flex items-center p-3 bg-purple-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faMoneyBillWave" class="h-5 w-5 text-purple-400"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Créditos Otorgados</p>
+                  <p class="text-sm font-semibold text-purple-600">{{ stats.weekly_credits_granted }}</p>
+                </div>
+              </div>
+              <div class="flex items-center p-3 bg-teal-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faCoins" class="h-5 w-5 text-teal-400"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Créditos Totales</p>
+                  <p class="text-sm font-semibold text-teal-600">{{ stats.weekly_credits_total }}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <svg class="h-6 w-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Reservados Hoy</dt>
-                    <dd class="text-lg font-medium text-gray-900">{{ stats.espacios_reservados_del_dia || 0 }}</dd>
-                  </dl>
+          <!-- General User Stats -->
+          <div>
+            <h4 class="text-md font-semibold text-gray-900 mb-4">Estadísticas de Usuarios</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div class="flex items-center p-3 bg-blue-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faUsers" class="h-6 w-6 text-blue-400"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Usuarios Registrados</p>
+                  <p class="text-lg font-semibold text-blue-600">{{ stats.total_users_registered }}</p>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Financial Stats -->
-      <div class="mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Estadísticas Financieras</h2>
-        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <svg class="h-6 w-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                  </svg>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Créditos Mes Actual</dt>
-                    <dd class="text-lg font-medium text-gray-900">{{ stats.creditos_comprados_este_mes || 0 }}</dd>
-                  </dl>
+              <div class="flex items-center p-3 bg-green-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faCreditCard" class="h-6 w-6 text-green-400"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Con Créditos Activos</p>
+                  <p class="text-lg font-semibold text-green-600">{{ stats.users_with_active_credits }}</p>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                  </svg>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Ingresos Mes Actual</dt>
-                    <dd class="text-lg font-medium text-gray-900">${{ stats.dinero_total_por_venta_de_creditos_este_mes || 0 }}</dd>
-                  </dl>
+              <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faUserSlash" class="h-6 w-6 text-gray-400"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Sin Créditos</p>
+                  <p class="text-lg font-semibold text-gray-600">{{ stats.users_without_credits }}</p>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                  </svg>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Créditos Mes Pasado</dt>
-                    <dd class="text-lg font-medium text-gray-900">{{ stats.creditos_comprados_el_mes_pasado || 0 }}</dd>
-                  </dl>
+              <div class="flex items-center p-3 bg-yellow-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faClock" class="h-6 w-6 text-yellow-400"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Créditos por Vencer (7d)</p>
+                  <p class="text-sm font-semibold text-yellow-600">{{ stats.users_with_expiring_credits }}</p>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <svg class="h-6 w-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                  </svg>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Cancelaciones Mes</dt>
-                    <dd class="text-lg font-medium text-gray-900">{{ stats.total_cancelaciones_en_el_mes || 0 }}</dd>
-                  </dl>
+              <div class="flex items-center p-3 bg-red-50 rounded-lg">
+                <div class="flex-shrink-0 mr-3"><fa-icon [icon]="faExclamationCircle" class="h-6 w-6 text-red-400"></fa-icon></div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-gray-900 leading-tight">Con Créditos Vencidos</p>
+                  <p class="text-sm font-semibold text-red-600">{{ stats.users_with_expired_credits }}</p>
                 </div>
               </div>
             </div>
@@ -268,54 +248,52 @@
       </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="px-4 py-6 sm:px-0">
-      <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Acciones Rápidas</h3>
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <button 
-          routerLink="/admin/users"
-          class="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-lg text-center transition-colors">
-          <svg class="h-8 w-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
-          </svg>
-          <div class="font-medium">Gestionar Usuarios</div>
-        </button>
-
-        <button 
-          routerLink="/admin/spaces"
-          class="bg-green-600 hover:bg-green-700 text-white p-4 rounded-lg text-center transition-colors">
-          <svg class="h-8 w-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-          </svg>
-          <div class="font-medium">Gestionar Espacios</div>
-        </button>
-
-        <button 
-          routerLink="/admin/reservations"
-          class="bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-lg text-center transition-colors">
-          <svg class="h-8 w-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-          </svg>
-          <div class="font-medium">Aprobar Reservaciones</div>
-        </button>
-
-        <button 
-          routerLink="/admin/calendar"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-lg text-center transition-colors">
-          <svg class="h-8 w-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
-          <div class="font-medium">Ver Calendario</div>
-        </button>
+    <!-- Pending Reservations Card -->
+    <div *ngIf="pendingReservations.length > 0" class="bg-white shadow rounded-lg">
+      <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Reservaciones Pendientes</h3>
+        <div class="space-y-4">
+          <div *ngFor="let r of pendingReservations" class="p-4 border rounded-lg flex items-center justify-between">
+            <div>
+              <p class="font-semibold">{{ r.user_name }} - {{ r.space_name }}</p>
+              <p class="text-sm text-gray-600">{{ r.start_time | date:'fullDate' }} a las {{ r.start_time | date:'shortTime' }}</p>
+            </div>
+            <div class="flex space-x-2">
+              <button (click)="approveReservation(r.id)" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md text-sm">Aprobar</button>
+              <button (click)="cancelReservation(r.id)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm">Cancelar</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Recent Activity -->
-    <div class="px-4 py-6 sm:px-0">
-      <div class="bg-white shadow rounded-lg">
+    <!-- Collapsible Weekly Calendar Card -->
+    <div class="bg-white shadow rounded-lg">
+      <div class="px-4 py-3 sm:p-6">
+        <button
+          (click)="toggleCalendar()"
+          class="w-full flex items-center justify-between text-left"
+        >
+          <h3 class="text-lg font-medium text-gray-900">Calendario Semanal</h3>
+          <fa-icon
+            [icon]="calendarExpanded ? faChevronUp : faChevronDown"
+            class="h-5 w-5 text-gray-400 transition-transform"
+          >
+          </fa-icon>
+        </button>
+
+        <!-- Calendar Content -->
+        <div *ngIf="calendarExpanded" class="mt-6">
+          <app-weekly-dashboard></app-weekly-dashboard>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity - Always visible -->
+    <!--   <div class="bg-white shadow rounded-lg">
         <div class="px-4 py-5 sm:p-6">
           <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Actividad Reciente</h3>
-          
+
           <div *ngIf="recentActivity.length === 0" class="text-gray-500 text-center py-8">
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
@@ -350,6 +328,9 @@
             </ul>
           </div>
         </div>
-      </div>
-    </div>
+      </div> -->
+
+    <!-- Space Stats -->
+   
   </div>
+</div>

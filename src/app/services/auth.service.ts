@@ -21,12 +21,12 @@ export interface User {
   name: string;
   phone: string;
   role: 'admin' | 'professional';
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
   specialty?: string;
   description?: string;
   profile_image?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
   credits?: Credit[];
   active_credits: number;
   total_credits: number;
@@ -81,11 +81,22 @@ export class AuthService {
   }
 
   logout(): void {
+    // Clear localStorage
     localStorage.removeItem('omma_token');
     localStorage.removeItem('omma_user');
+
+    // Reset internal state
     this.tokenSubject.next(null);
     this.currentUserSubject.next(null);
+
+    // Navigate to login/home page
     this.router.navigate(['/']);
+  }
+
+  // Method to clear session when token expires
+  clearExpiredSession(): void {
+    console.log('Clearing expired session...');
+    this.logout();
   }
 
   isAuthenticated(): boolean {

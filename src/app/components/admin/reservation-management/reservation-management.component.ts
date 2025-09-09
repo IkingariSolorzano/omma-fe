@@ -169,9 +169,14 @@ export class ReservationManagementComponent implements OnInit {
   }
 
   loadBusinessHours(): void {
-    this.businessHoursService.refreshData();
-    this.businessHoursService.businessHours$.subscribe(hours => {
-      this.businessHours = hours;
+    this.businessHoursService.getBusinessHours().subscribe({
+      next: (hours: BusinessHour[]) => {
+        this.businessHours = hours;
+      },
+      error: (error) => {
+        console.error('Error loading business hours for reservation management:', error);
+        this.error = 'No se pudieron cargar los horarios de atención.';
+      }
     });
   }
 

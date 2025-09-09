@@ -3,15 +3,20 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { AdminService, CreateUserRequest, UpdateUserRequest, ChangePasswordRequest, RegisterPaymentRequest, AddCreditsRequest, ExtendExpiryRequest, ReactivateExpiredRequest, TransferCreditsRequest, DeductCreditsRequest, CreditLot, ExtendCreditLotRequest, ReactivateCreditLotRequest, TransferFromLotRequest, DeductFromLotRequest } from '../../../services/admin.service';
 import { User } from '../../../services/auth.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-user-management',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './user-management.component.html',
-  styleUrl: './user-management.component.scss'
+  styleUrls: ['./user-management.component.scss']
 })
 export class UserManagementComponent implements OnInit {
+  createPasswordFieldType: string = 'password';
+  newPasswordFieldType: string = 'password';
+  confirmPasswordFieldType: string = 'password';
+
   users: User[] = [];
   userForm: FormGroup;
   editForm: FormGroup;
@@ -45,7 +50,8 @@ export class UserManagementComponent implements OnInit {
       name: ['', [Validators.required]],
       phone: ['', [Validators.required]],
       specialty: ['', [Validators.required]],
-      description: ['']
+      description: [''],
+      role: ['professional', [Validators.required]]
     });
 
     this.editForm = this.fb.group({
@@ -115,8 +121,13 @@ export class UserManagementComponent implements OnInit {
       this.success = '';
 
       const userData: CreateUserRequest = {
-        ...this.userForm.value,
-        role: 'professional'
+        email: this.userForm.value.email,
+        password: this.userForm.value.password,
+        name: this.userForm.value.name,
+        phone: this.userForm.value.phone,
+        specialty: this.userForm.value.specialty,
+        description: this.userForm.value.description || undefined,
+        role: this.userForm.value.role
       };
 
       this.adminService.createUser(userData).subscribe({
@@ -444,6 +455,7 @@ export class UserManagementComponent implements OnInit {
   get name() { return this.userForm.get('name'); }
   get phone() { return this.userForm.get('phone'); }
   get specialty() { return this.userForm.get('specialty'); }
+  get role() { return this.userForm.get('role'); }
 
   // Validator to ensure new password and confirmation match
   private passwordsMatchValidator = (group: AbstractControl): ValidationErrors | null => {
@@ -464,5 +476,24 @@ export class UserManagementComponent implements OnInit {
         this.paymentForm.get('credits')?.setValue('', { emitEvent: false });
       }
     });
+  }
+
+  getProfileImageUrl(imagePath: string): string {
+    if (!imagePath) return '';
+    // Remove leading slash if present and construct full URL
+    const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+    return `${environment.apiUrl.replace('/api/v1', '')}/${cleanPath}`;
+  }
+
+  toggleCreatePasswordFieldType() {
+    this.createPasswordFieldType = this.createPasswordFieldType === 'password' ? 'text' : 'password';
+  }
+
+  toggleNewPasswordFieldType() {
+    this.newPasswordFieldType = this.newPasswordFieldType === 'password' ? 'text' : 'password';
+  }
+
+  toggleConfirmPasswordFieldType() {
+    this.confirmPasswordFieldType = this.confirmPasswordFieldType === 'password' ? 'text' : 'password';
   }
 }

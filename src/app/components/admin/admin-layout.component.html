@@ -1,18 +1,34 @@
 <div class="min-h-screen bg-gray-50">
-  <!-- Header -->
+  <!-- Header con Logo -->
   <header class="bg-white shadow">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center flex-wrap gap-4 py-6">
-        <div class="flex items-center">
-          <h1 class="text-3xl font-bold text-gray-900">Panel de Administración</h1>
+    <div class="px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center flex-wrap gap-4 py-4">
+        <!-- Logo y Título -->
+        <div class="flex items-center space-x-4">
+          <a routerLink="/" class="flex items-center hover:opacity-80 transition-opacity">
+            <img src="images/omma-logo.png" alt="OMMA-LOGO" class="h-10 w-auto" />
+          </a>
+          <div class="h-6 w-px bg-gray-300"></div>
+          <h1 class="text-2xl font-bold text-gray-900">Panel de Administración</h1>
         </div>
+
+        <!-- Botones de navegación -->
         <div class="flex items-center flex-wrap gap-4">
-          <span class="text-gray-700">Bienvenido, {{ currentUser?.name }}</span>
-          <button 
-            (click)="logout()"
-            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-            Cerrar Sesión
-          </button>
+          <a routerLink="/"
+             class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center">
+            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            </svg>
+            Página Principal
+          </a>
+          <div class="flex items-center space-x-3">
+            <span class="text-gray-700 text-sm">{{ currentUser?.name }}</span>
+            <button
+              (click)="logout()"
+              class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">
+              Cerrar Sesión
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -20,13 +36,23 @@
 
   <!-- Navigation -->
   <nav class="bg-blue-600">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="px-4 sm:px-6 lg:px-8">
       <div class="flex flex-wrap gap-x-8 gap-y-2">
         <a routerLink="/admin" 
            routerLinkActive="bg-blue-700" 
            [routerLinkActiveOptions]="{exact: true}"
            class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
           Dashboard
+        </a>
+        <a routerLink="/admin/calendar" 
+           routerLinkActive="bg-blue-700"
+           class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
+          Calendario
+        </a>
+        <a routerLink="/admin/reservations" 
+           routerLinkActive="bg-blue-700"
+           class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
+          Reservaciones
         </a>
         <a routerLink="/admin/users" 
            routerLinkActive="bg-blue-700"
@@ -38,16 +64,6 @@
            class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
           Espacios
         </a>
-        <a routerLink="/admin/reservations" 
-           routerLinkActive="bg-blue-700"
-           class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
-          Reservaciones
-        </a>
-        <a routerLink="/admin/calendar" 
-           routerLinkActive="bg-blue-700"
-           class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
-          Calendario
-        </a>
         <a routerLink="/admin/business-hours" 
            routerLinkActive="bg-blue-700"
            class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
@@ -58,7 +74,7 @@
   </nav>
 
   <!-- Main Content -->
-  <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+  <main class="py-6 px-4 sm:px-6 lg:px-8">
     <router-outlet></router-outlet>
   </main>
 </div>

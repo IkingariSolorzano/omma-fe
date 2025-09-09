@@ -4,6 +4,11 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { AdminService, CalendarSlot, CalendarParams, Space, BusinessHour, Schedule, ClosedDate, CreateExternalReservationRequest } from '../../../services/admin.service';
 import { BusinessHoursService } from '../../../services/business-hours.service';
 import { ProfessionalService } from '../../../services/professional.service';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import {
+  faBuilding,
+  faThLarge
+} from '@fortawesome/free-solid-svg-icons';
 
 interface CalendarDay {
   date: Date;
@@ -20,7 +25,7 @@ interface CalendarWeek {
 @Component({
   selector: 'app-calendar-view',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FontAwesomeModule],
   templateUrl: './calendar-view.component.html',
   styleUrls: ['./calendar-view.component.scss']
 })
@@ -46,6 +51,10 @@ export class CalendarViewComponent implements OnInit {
   bookingForm: FormGroup;
   isSubmitting = false;
 
+  // FontAwesome icons
+  faBuilding = faBuilding;
+  faThLarge = faThLarge;
+
   constructor(
     private fb: FormBuilder,
     private adminService: AdminService,
@@ -62,7 +71,7 @@ export class CalendarViewComponent implements OnInit {
       clientName: ['', Validators.required],
       clientPhone: ['', Validators.required],
       clientEmail: [''],
-      spaceId: ['', Validators.required],
+      spaceId: [null, Validators.required],
       duration: [1, [Validators.required, Validators.min(1)]],
       startHour: ['', Validators.required],
       status: ['confirmed'],
@@ -417,7 +426,7 @@ export class CalendarViewComponent implements OnInit {
       clientName: '',
       clientPhone: '',
       clientEmail: '',
-      spaceId: '',
+      spaceId: null,
       duration: 1,
       startHour: '',
       status: 'confirmed',
@@ -463,7 +472,7 @@ export class CalendarViewComponent implements OnInit {
   onSpaceChange(event: any): void {
     const spaceId = parseInt(event.target.value);
     this.selectedSpaceId = spaceId || null;
-    this.bookingForm.patchValue({ spaceId: spaceId || '' });
+    this.bookingForm.patchValue({ spaceId: spaceId || null });
     this.updateAvailableHours();
   }
 
@@ -475,8 +484,8 @@ export class CalendarViewComponent implements OnInit {
 
     const dayOfWeek = this.selectedDay.date.getDay();
     const spaceSchedule = this.adminSpaceSchedules.find(
-      schedule => schedule.space_id === this.selectedSpaceId && 
-                  schedule.day_of_week === dayOfWeek && 
+      schedule => schedule.space_id === this.selectedSpaceId &&
+                  schedule.day_of_week === dayOfWeek &&
                   true
     );
 
@@ -505,6 +514,7 @@ export class CalendarViewComponent implements OnInit {
     
     this.availableHours = hours;
   }
+
 
   isHourAvailable(hour: number): boolean {
     if (!this.selectedDay || !this.selectedSpaceId) return false;
@@ -564,18 +574,77 @@ export class CalendarViewComponent implements OnInit {
     };
 
     this.adminService.createExternalReservation(reservationRequest).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         console.log('Reserva creada exitosamente:', response);
         this.closeBookingModal();
         this.loadCalendar(); // Refresh calendar to show new reservation
         // You could add a success message here
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al crear la reserva:', error);
         this.error = error?.error?.error || 'Error al crear la reserva';
         this.isSubmitting = false;
       }
     });
+  }
+
+  selectSpace(spaceId: number): void {
+    this.selectedSpaceId = spaceId;
+    this.bookingForm.patchValue({ spaceId: spaceId });
+    // Generate available hours for admin (no business hour restrictions)
+    this.generateAdminAvailableHours();
+  }
+
+  private generateAdminAvailableHours(): void {
+    // Admin can book any hour from 6 AM to 11 PM (no business hours restrictions)
+    this.availableHours = [];
+    for (let hour = 6; hour <= 23; hour++) {
+      const timeString = hour.toString().padStart(2, '0') + ':00';
+      // Only check for conflicts, not business hours
+      if (this.isHourAvailableForAdmin(hour)) {
+        this.availableHours.push(timeString);
+      }
+    }
+  }
+
+  private isHourAvailableForAdmin(hour: number): boolean {
+    if (!this.selectedDay || !this.selectedSpaceId) return false;
+
+    const now = new Date();
+    if (this.isSameDay(this.selectedDay.date, now) && hour <= now.getHours()) {
+      return false; // Past hour for today
+    }
+
+    // Admin reservations: Only check for conflicts, bypass business hours
+    return !this.hasConflictingReservation(hour);
+  }
+
+  private hasConflictingReservation(hour: number): boolean {
+    const reservationDateTime = new Date(this.selectedDay!.date);
+    reservationDateTime.setHours(hour, 0, 0, 0);
+    
+    return this.calendarSlots.some(slot => {
+      if (slot.space_id !== this.selectedSpaceId) return false;
+      if (slot.status === 'cancelled') return false;
+      
+      const slotStart = new Date(slot.start_time);
+      const slotEnd = new Date(slot.end_time);
+      
+      const requestedStart = new Date(reservationDateTime);
+      const requestedEnd = new Date(reservationDateTime);
+      requestedEnd.setHours(hour + 1);
+      
+      return (requestedStart < slotEnd && requestedEnd > slotStart);
+    });
+  }
+
+  selectHour(hour: string): void {
+    this.bookingForm.patchValue({ startHour: hour });
+  }
+
+  selectSpaceFilter(spaceId: string): void {
+    this.filterForm.patchValue({ space_ids: spaceId || '' });
+    this.loadCalendar();
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {

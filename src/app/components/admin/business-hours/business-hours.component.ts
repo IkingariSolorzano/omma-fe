@@ -71,49 +71,57 @@ export class BusinessHoursComponent implements OnInit {
   }
 
   onSubmitBusinessHours(): void {
-    if (this.businessHoursForm.valid) {
-      this.loading = true;
-      this.clearMessages();
-
-      const formData = this.businessHoursForm.value;
-      
-      // Check if business hour for this day already exists
-      const existingHour = this.businessHours.find(h => h.day_of_week === parseInt(formData.day_of_week));
-      
-      if (existingHour) {
-        // Update existing
-        const updatedHour = { ...existingHour, ...formData, day_of_week: parseInt(formData.day_of_week) };
-        this.adminService.updateBusinessHour(existingHour.id!, updatedHour).subscribe({
-          next: () => {
-            this.success = 'Horario actualizado exitosamente';
-            this.businessHoursForm.reset();
-            this.loadBusinessHours();
-            this.loading = false;
-          },
-          error: (error) => {
-            this.error = 'Error al actualizar horario';
-            this.loading = false;
-            console.error('Error updating business hour:', error);
-          }
-        });
-      } else {
-        // Create new
-        const newHour = { ...formData, day_of_week: parseInt(formData.day_of_week) };
-        this.adminService.createBusinessHour(newHour).subscribe({
-          next: () => {
-            this.success = 'Horario creado exitosamente';
-            this.businessHoursForm.reset();
-            this.loadBusinessHours();
-            this.loading = false;
-          },
-          error: (error) => {
-            this.error = 'Error al crear horario';
-            this.loading = false;
-            console.error('Error creating business hour:', error);
-          }
-        });
-      }
+    if (this.businessHoursForm.invalid) {
+      this.error = 'Por favor, complete todos los campos requeridos.';
+      return;
     }
+
+    this.loading = true;
+    this.clearMessages();
+
+    const formData = this.businessHoursForm.value;
+    const dayOfWeek = parseInt(formData.day_of_week, 10);
+
+    if (isNaN(dayOfWeek)) {
+        this.error = 'El día de la semana no es válido.';
+        this.loading = false;
+        return;
+    }
+
+    const payload: BusinessHour = {
+        day_of_week: dayOfWeek,
+        start_time: formData.start_time,
+        end_time: formData.end_time,
+        is_closed: formData.is_closed
+    };
+
+    // The backend now handles both create and update (restore) logic via the same endpoint.
+    this.adminService.createBusinessHour(payload).subscribe({
+        next: (response) => {
+            // The backend might return a 200 (OK) for an update/restore or a 201 (Created) for a new record.
+            // We can treat both as a success.
+            this.success = 'Horario guardado exitosamente';
+            this.resetForms();
+            this.loadBusinessHours();
+        },
+        error: (err) => this.handleError(err, 'guardar'),
+        complete: () => this.loading = false
+    });
+  }
+
+  private resetForms(): void {
+    this.businessHoursForm.reset({
+        day_of_week: '',
+        start_time: '09:00',
+        end_time: '18:00',
+        is_closed: false
+    });
+  }
+
+  private handleError(error: any, action: string): void {
+    this.error = `Error al ${action} el horario.`;
+    console.error(`Error ${action} business hour:`, error);
+    this.loading = false;
   }
 
   onSubmitClosedDate(): void {

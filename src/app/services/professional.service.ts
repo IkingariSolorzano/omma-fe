@@ -103,8 +103,8 @@ export class ProfessionalService {
     return this.http.post<Reservation>(`${this.apiUrl}/reservations`, reservationData);
   }
 
-  cancelReservation(reservationId: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/reservations/${reservationId}`);
+  cancelReservation(reservationId: number, body: { credits_to_refund: number }): Observable<any> {
+    return this.http.request('DELETE', `${this.apiUrl}/reservations/${reservationId}`, { body: body });
   }
 
   // Schedules
@@ -117,5 +117,20 @@ export class ProfessionalService {
   // Public directory
   getProfessionalDirectory(): Observable<Professional[]> {
     return this.http.get<Professional[]>(`${this.apiUrl}/professionals`);
+  }
+
+  // Profile management
+  uploadProfilePicture(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('profile_picture', file);
+    return this.http.post(`${this.apiUrl}/profile/picture`, formData);
+  }
+
+  changePassword(data: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/profile/password`, data);
+  }
+
+  updateProfile(profileData: {name?: string, phone?: string, specialty?: string, description?: string}): Observable<any> {
+    return this.http.put(`${this.apiUrl}/profile`, profileData);
   }
 }

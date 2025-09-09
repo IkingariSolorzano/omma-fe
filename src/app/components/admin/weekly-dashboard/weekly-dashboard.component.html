@@ -1,0 +1,181 @@
+<!-- Weekly Dashboard -->
+<div class="bg-white shadow rounded-lg overflow-hidden">
+  <!-- Header -->
+  <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+    <!-- Title Row -->
+    <div class="mb-4">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">Tablero Diario de Reservas</h3>
+      <p class="mt-1 text-sm text-gray-500">
+        Vista completa del día actual con disponibilidad de espacios por hora
+      </p>
+    </div>
+
+    <!-- Navigation Row -->
+    <div class="flex items-center justify-center">
+      <!-- Week Navigation -->
+      <div class="flex items-center justify-between w-full max-w-md">
+        <button
+          (click)="previousDay()"
+          class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+          title="Día anterior">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+
+        <h4 class="text-2xl font-bold text-blue-600 text-center flex-1">
+          {{ getCurrentDayLabel() }}
+        </h4>
+
+        <button
+          (click)="nextDay()"
+          class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+          title="Día siguiente">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="px-4 py-3 bg-red-50 border-l-4 border-red-400">
+    <div class="flex">
+      <div class="flex-shrink-0">
+        <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+        </svg>
+      </div>
+      <div class="ml-3">
+        <p class="text-sm text-red-700">{{ error }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="px-4 py-12 text-center">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+    <p class="mt-2 text-sm text-gray-500">Cargando tablero semanal...</p>
+  </div>
+
+  <!-- Schedule Grid -->
+  <div *ngIf="!loading && !error" class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <!-- Time Column -->
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 min-w-[100px]">
+            Horario
+          </th>
+
+          <!-- Space Columns -->
+          <th *ngFor="let space of spaces"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
+            <div class="flex items-center">
+              <div class="flex-1">
+                <div class="font-medium text-gray-900">{{ space.name }}</div>
+                <div class="text-gray-500 text-xs">{{ space.capacity }} personas</div>
+              </div>
+            </div>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody class="bg-white divide-y divide-gray-200">
+        <tr *ngFor="let slot of scheduleSlots" class="hover:bg-gray-50">
+          <!-- Time Column -->
+          <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white border-r border-gray-200">
+            <div class="flex items-center">
+              <svg class="h-4 w-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              {{ slot.time }}
+            </div>
+          </td>
+
+          <!-- Space Status Columns -->
+          <td *ngFor="let space of spaces"
+              class="px-2 py-2 whitespace-nowrap">
+            <div class="flex items-center justify-center">
+              <div [ngClass]="getStatusClass(slot.spaces[space.id].status || 'available')"
+                   class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium border min-w-[120px] justify-center">
+                <span class="truncate max-w-[100px]"
+                      [title]="getStatusText(slot, space.id)">
+                  {{ getStatusText(slot, space.id) }}
+                </span>
+
+                <!-- Status Icon -->
+                <svg *ngIf="slot.spaces[space.id]?.status === 'booked'"
+                     class="ml-1 h-3 w-3 text-blue-600"
+                     fill="currentColor"
+                     viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                </svg>
+
+                <svg *ngIf="slot.spaces[space.id]?.status === 'available'"
+                     class="ml-1 h-3 w-3 text-green-600"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+
+                <svg *ngIf="slot.spaces[space.id]?.status === 'special'"
+                     class="ml-1 h-3 w-3 text-gray-500"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Legend -->
+  <div class="px-4 py-4 bg-gray-50 border-t border-gray-200">
+    <div class="flex flex-wrap items-center gap-4 text-xs">
+      <div class="flex items-center">
+        <div class="w-3 h-3 bg-green-100 border border-green-200 rounded mr-2"></div>
+        <span class="text-gray-600">Disponible</span>
+      </div>
+
+      <div class="flex items-center">
+        <div class="w-3 h-3 bg-blue-100 border border-blue-200 rounded mr-2"></div>
+        <span class="text-gray-600">Reservado</span>
+      </div>
+
+      <div class="flex items-center">
+        <div class="w-3 h-3 bg-gray-100 border border-gray-200 rounded mr-2"></div>
+        <span class="text-gray-600">Horario especial</span>
+      </div>
+
+      <div class="flex items-center">
+        <div class="w-3 h-3 bg-red-100 border border-red-200 rounded mr-2"></div>
+        <span class="text-gray-600">Cerrado</span>
+      </div>
+    </div>
+
+    <div class="mt-2 text-xs text-gray-500">
+      <strong>Nota:</strong> Los horarios de negocio son de 8:00 AM a 6:00 PM de lunes a viernes.
+      Los horarios fuera de este rango se marcan como "Horario especial".
+      <br>
+      <strong>Zona Horaria:</strong> Ciudad de México (America/Mexico_City)
+    </div>
+  </div>
+</div>
+
+<!-- Empty State -->
+<div *ngIf="!loading && spaces.length === 0 && !error" class="bg-white shadow rounded-lg p-8 text-center">
+  <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+  </svg>
+  <h3 class="mt-2 text-sm font-medium text-gray-900">No hay espacios disponibles</h3>
+  <p class="mt-1 text-sm text-gray-500">
+    Crea espacios para poder visualizar el tablero semanal de reservas.
+  </p>
+</div>

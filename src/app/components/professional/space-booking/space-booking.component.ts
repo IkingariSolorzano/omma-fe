@@ -3,7 +3,7 @@ import { forkJoin } from 'rxjs';
 import Swal, { SweetAlertResult } from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 import { ProfessionalService, CreateReservationRequest, Credits, Reservation } from '../../../services/professional.service';
-import { Space } from '../../../services/admin.service';
+import { AdminService, CalendarSlot, Space } from '../../../services/admin.service';
 import { BusinessHoursService, BusinessHour, ClosedDate } from '../../../services/business-hours.service';
 
 @Component({
@@ -22,10 +22,10 @@ export class SpaceBookingComponent implements OnInit {
   
   // Calendar state
   currentDate = new Date();
-  reservations: any[] = [];
+  reservations: any[] = [];  // deprecated, keeping for compatibility
   existingReservations: any[] = [];
   selectedDate: Date | null = null;
-  calendarDays: CalendarDay[] = [];
+  calendarDays: CalendarDay[] = [];  // Month view days with slots and status
   selectedDayReservations: Reservation[] = [];
   
   // Day view state
@@ -34,6 +34,8 @@ export class SpaceBookingComponent implements OnInit {
   businessHours: BusinessHour[] = [];
   closedDates: ClosedDate[] = [];
   spaceSchedules: any[] = [];
+  // Admin-like calendar slots for month view and availability checks
+  calendarSlots: CalendarSlot[] = [];
   
   // Booking state
   selectedSlots: { hourSlot: HourSlot, spaceSlot: SpaceSlot }[] = [];
@@ -45,7 +47,8 @@ export class SpaceBookingComponent implements OnInit {
 
   constructor(
     private professionalService: ProfessionalService,
-    private businessHoursService: BusinessHoursService
+    private businessHoursService: BusinessHoursService,
+    private adminService: AdminService
   ) {}
 
   translateStatus(status: string): string {
@@ -58,76 +61,42 @@ export class SpaceBookingComponent implements OnInit {
   }
 
   private refreshAfterReservationChange(): void {
-    this.loading = true;
-    this.error = '';
-    // Reload credits and my reservations, then update day list and calendar
-    forkJoin({
-      credits: this.professionalService.getCredits(),
-      myRes: this.professionalService.getMyReservations()
-    }).subscribe({
-      next: ({ credits, myRes }) => {
-        this.credits = credits;
-        this.myReservations = myRes;
-        this.existingReservations = myRes;
-
-        if (this.selectedDate) {
-          this.selectedDayReservations = this.myReservations
-            .filter(r => this.isSameDay(new Date(r.start_time), this.selectedDate!))
-            .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-        }
-
-        this.selectedReservationForDetail = null;
-        this.generateDayView();
-        this.loading = false;
-        this.clearSelection();
-      },
-      error: (err) => {
-        console.error('Error refreshing data after reservation change:', err);
-        this.loading = false;
-      }
-    });
+    this.loadInitialData();
   }
 
-  getReservationCancellationState(reservation: any): { canCancel: boolean; hasPenalty: boolean } {
-    if (reservation.status === 'cancelled') {
-      return { canCancel: false, hasPenalty: false };
+  getReservationCancellationState(reservation: any): { canCancel: boolean; creditsToRefund: number } {
+    if (reservation.status !== 'confirmed') {
+      // Only confirmed reservations can be cancelled with this logic
+      return { canCancel: reservation.status === 'pending', creditsToRefund: 0 };
     }
 
-    // Pending reservations can be cancelled without penalty.
-    if (reservation.status === 'pending') {
-      const reservationTime = new Date(reservation.start_time).getTime();
-      const now = new Date().getTime();
-      const hoursDifference = (reservationTime - now) / (1000 * 60 * 60);
-      // Allow cancellation only for future pending reservations
-      return { canCancel: hoursDifference > 0, hasPenalty: false };
+    const reservationTime = new Date(reservation.start_time).getTime();
+    const now = new Date().getTime();
+    const hoursDifference = (reservationTime - now) / (1000 * 60 * 60);
+
+    if (hoursDifference <= 0) {
+      return { canCancel: false, creditsToRefund: 0 }; // Cannot cancel past reservations
     }
 
-    if (reservation.status === 'confirmed') {
-      const reservationTime = new Date(reservation.start_time).getTime();
-      const now = new Date().getTime();
-      const hoursDifference = (reservationTime - now) / (1000 * 60 * 60);
-      
-      const canCancel = hoursDifference > 0; // Can't cancel past reservations
-      const hasPenalty = hoursDifference <= 24;
-
-      return { canCancel, hasPenalty };
+    if (hoursDifference < 24) {
+      // Within 24 hours, refund 5 credits
+      return { canCancel: true, creditsToRefund: 5 };
+    } else {
+      // More than 24 hours, refund full amount
+      return { canCancel: true, creditsToRefund: reservation.cost_credits };
     }
-
-    return { canCancel: false, hasPenalty: false }; // Default for any other status
   }
 
   cancelReservation(reservation: any): void {
     const state = this.getReservationCancellationState(reservation);
     if (!state.canCancel) return;
 
-    const title = '¿Estás seguro?';
-    let text = 'Esta acción no se puede deshacer.';
-    let confirmButtonText = 'Sí, ¡cancelar!';
-
-    if (state.hasPenalty) {
-      text = `Se aplicará una penalización de ${reservation.cost_credits} créditos (costo total de la reserva) por cancelación tardía.`;
-    } else {
-      text = 'No se aplicará ninguna penalización.';
+    const title = '¿Estás seguro de cancelar?';
+    let text = `Se te reembolsarán ${state.creditsToRefund} de los ${reservation.cost_credits} créditos utilizados.`;
+    if (state.creditsToRefund === reservation.cost_credits) {
+      text = `Se te reembolsarán todos tus créditos (${reservation.cost_credits}).`;
+    } else if (state.creditsToRefund === 0) {
+      text = 'No se reembolsarán créditos por esta cancelación.';
     }
 
     Swal.fire({
@@ -137,151 +106,99 @@ export class SpaceBookingComponent implements OnInit {
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
-      confirmButtonText: confirmButtonText,
+      confirmButtonText: 'Sí, cancelar',
       cancelButtonText: 'No, mantener'
     }).then((result: SweetAlertResult) => {
       if (result.isConfirmed) {
         this.loading = true;
-        this.professionalService.cancelReservation(reservation.id).subscribe({
-      next: () => {
-        this.success = 'Reservación cancelada exitosamente.';
-        this.error = '';
-
-        // Use forkJoin to wait for all data to be reloaded before updating the UI
-        forkJoin({
-          credits: this.professionalService.getCredits(),
-          reservations: this.professionalService.getMyReservations()
-        }).subscribe(({ credits, reservations }) => {
-          this.credits = credits;
-          this.myReservations = reservations;
-          this.existingReservations = reservations;
-
-          // Update the daily reservation list
-          if (this.selectedDate) {
-            this.selectedDayReservations = this.myReservations
-              .filter(r => this.isSameDay(new Date(r.start_time), this.selectedDate!))
-              .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+        this.professionalService.cancelReservation(reservation.id, { credits_to_refund: state.creditsToRefund }).subscribe({
+          next: () => {
+            this.success = 'Reservación cancelada exitosamente.';
+            this.error = '';
+            this.refreshAfterReservationChange();
+          },
+          error: (err) => {
+            this.error = err.error.error || 'Ocurrió un error al cancelar la reservación.';
+            this.success = '';
+            this.loading = false;
           }
-
-          this.selectedReservationForDetail = null; // Reset detail view
-
-          // Regenerate the calendar grid
-          this.generateDayView();
-          this.loading = false;
         });
-      },
-      error: (err) => {
-        this.error = err.error.error || 'Ocurrió un error al cancelar la reservación.';
-        this.success = '';
-        this.loading = false;
-      }
-    });
       }
     });
   }
 
   ngOnInit(): void {
-    this.loadSpaces();
-    this.loadCredits();
-    this.loadBusinessData();
-    this.loadMyReservations();
-    this.loadExistingReservations();
-    this.loadSpaceSchedules();
-    this.generateCalendar();
+    this.loadInitialData();
   }
 
-  loadSpaces(): void {
-    this.professionalService.getSpaces().subscribe({
-      next: (spaces) => {
-        this.spaces = spaces;
-      },
-      error: (error) => {
-        this.error = 'Error al cargar espacios';
-        console.error('Error loading spaces:', error);
-      }
-    });
-  }
+  // This method is now the single source of truth for loading all calendar-related data.
+  // It ensures that all data is fetched before the UI is rendered, preventing race conditions.
 
-  loadCredits(): void {
-    this.professionalService.getCredits().subscribe({
-      next: (credits) => {
-        this.credits = credits;
-      },
-      error: (error) => {
-        console.error('Error loading credits:', error);
-      }
-    });
-  }
+  loadInitialData(): void {
+    this.loading = true;
+    const start = this.getCalendarStartDate();
+    const end = this.getCalendarEndDate();
 
-  loadExistingReservations(): void {
-    this.professionalService.getMyReservations().subscribe({
-      next: (reservations: any) => {
-        console.log('Existing reservations loaded:', reservations);
-        this.existingReservations = reservations;
-        if (this.showDayView) {
-          this.generateDayView();
-        }
-      },
-      error: (error: any) => {
-        console.error('Error loading existing reservations:', error);
-        this.existingReservations = [];
-      }
-    });
-  }
+    const calendarParams = {
+      period: 'custom' as const,
+      start_date: this.toISODateString(start),
+      end_date: this.toISODateString(end)
+    };
 
-  loadSpaceSchedules(): void {
-    this.professionalService.getSchedules().subscribe({
-      next: (response: any) => {
-        console.log('Raw schedules response:', response);
-        // Handle different response formats
-        if (Array.isArray(response)) {
-          this.spaceSchedules = response;
-        } else if (response && Array.isArray(response.schedules)) {
-          this.spaceSchedules = response.schedules;
-        } else if (response && Array.isArray(response.data)) {
-          this.spaceSchedules = response.data;
-        } else {
-          console.warn('Unexpected schedules response format:', response);
-          this.spaceSchedules = [];
-        }
-        console.log('Space schedules loaded:', this.spaceSchedules);
-        this.generateDayView();
-      },
-      error: (error) => {
-        console.error('Error loading space schedules:', error);
-        this.spaceSchedules = [];
-        this.generateDayView(); // Still generate view with fallback logic
-      }
-    });
-  }
+    forkJoin({
+      spaces: this.professionalService.getSpaces(),
+      credits: this.professionalService.getCredits(),
+      businessHours: this.businessHoursService.getBusinessHours(),
+      closedDates: this.businessHoursService.getClosedDates(),
+      schedules: this.professionalService.getSchedules(),
+      calendarSlots: this.adminService.getCalendar(calendarParams),
+      myReservations: this.professionalService.getMyReservations()
+    }).subscribe({
+      next: (data) => {
+        this.spaces = data.spaces;
+        this.credits = data.credits;
+        this.businessHours = data.businessHours;
+        this.closedDates = data.closedDates;
+        this.spaceSchedules = this.normalizeSchedules(data.schedules);
+        this.calendarSlots = data.calendarSlots;
+        this.myReservations = data.myReservations;
 
-  loadBusinessData(): void {
-    // Force refresh of business hours data
-    this.businessHoursService.refreshData();
-    
-    this.businessHoursService.businessHours$.subscribe(hours => {
-      console.log('Business hours loaded:', hours);
-      this.businessHours = hours;
-      if (hours.length > 0) {
+        this.existingReservations = (data.calendarSlots || []).map((s: any) => ({
+          id: s.id,
+          space_id: s.space_id,
+          start_time: s.start_time,
+          end_time: s.end_time,
+          status: s.status
+        }));
+
         this.generateCalendar();
-      }
-    });
-    
-    this.businessHoursService.closedDates$.subscribe(dates => {
-      console.log('Closed dates loaded:', dates);
-      this.closedDates = dates;
-      if (this.businessHours.length > 0) {
-        this.generateCalendar();
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = 'Error al cargar los datos iniciales. Por favor, intente de nuevo.';
+        console.error('Error loading initial data:', err);
+        this.loading = false;
       }
     });
   }
 
-  loadMyReservations() {
-    this.professionalService.getMyReservations().subscribe(reservations => {
-      this.myReservations = reservations;
-      this.generateCalendar();
-    });
+
+
+  // Load calendar slots for the visible month/week similar to admin calendar
+
+  private normalizeSchedules(response: any): any[] {
+    if (Array.isArray(response)) {
+      return response;
+    } else if (response && Array.isArray(response.schedules)) {
+      return response.schedules;
+    } else if (response && Array.isArray(response.data)) {
+      return response.data;
+    }
+    console.warn('Unexpected schedules response format:', response);
+    return [];
   }
+
+
 
   isDayWithMyReservation(day: Date): boolean {
     if (!day) return false;
@@ -314,9 +231,7 @@ export class SpaceBookingComponent implements OnInit {
       
       const dayOfWeek = date.getDay();
       const businessHour = this.businessHours.find(bh => bh.day_of_week === dayOfWeek);
-      const isClosedDate = this.closedDates.some(cd => 
-        cd.date === this.toISODateString(date) && cd.is_active
-      );
+      const isClosedDate = this.closedDates.some(cd => cd.date === this.toISODateString(date) && cd.is_active);
       
       // Debug: Log each day's evaluation
       const today = new Date();
@@ -332,6 +247,7 @@ export class SpaceBookingComponent implements OnInit {
         isActive = true;
       }
       
+      const slotsForDay = this.getSlotsForDate(date);
       this.calendarDays.push({
         date: new Date(date),
         day: date.getDate(),
@@ -339,7 +255,8 @@ export class SpaceBookingComponent implements OnInit {
         isToday: this.isToday(date),
         isActive: isActive,
         isSelected: !!(this.selectedDate && this.isSameDay(date, this.selectedDate)),
-        hasMyReservation: this.isDayWithMyReservation(date)
+        hasMyReservation: this.isDayWithMyReservation(date),
+        slots: slotsForDay
       });
     }
   }
@@ -353,7 +270,6 @@ export class SpaceBookingComponent implements OnInit {
     }
 
     this.selectedDate = day.date;
-    this.loadMyReservations(); // Force refresh reservations for the user
     this.generateCalendar(); // Regenerate to show selection
 
     if (day.hasMyReservation) {
@@ -461,23 +377,19 @@ export class SpaceBookingComponent implements OnInit {
       return false; // The hour is in the past for today
     }
     
-    // Check if there's an existing reservation for this space, date, and hour
+    // Check if there's an existing reservation (any user) for this space, date, and hour using calendarSlots
     const reservationDateTime = new Date(this.selectedDate);
     reservationDateTime.setHours(hour, 0, 0, 0);
     
-    const hasExistingReservation = this.existingReservations.some(reservation => {
-      if (reservation.space_id !== space.id) return false;
-      if (reservation.status === 'cancelled') return false;
-      
-      const reservationStart = new Date(reservation.start_time);
-      const reservationEnd = new Date(reservation.end_time);
-      
-      // Check if the requested hour overlaps with existing reservation
+    const hasExistingReservation = (this.calendarSlots || []).some((slot: CalendarSlot) => {
+      if (slot.space_id !== space.id) return false;
+      if (['cancelled'].includes(slot.status)) return false;
+      const slotStart = new Date(slot.start_time);
+      const slotEnd = new Date(slot.end_time);
       const requestedStart = new Date(reservationDateTime);
       const requestedEnd = new Date(reservationDateTime);
       requestedEnd.setHours(hour + 1);
-      
-      return (requestedStart < reservationEnd && requestedEnd > reservationStart);
+      return (requestedStart < slotEnd && requestedEnd > slotStart);
     });
     
     console.log(`Space ${space.id} at ${hour}:00 on ${this.selectedDate.toDateString()}: ${hasExistingReservation ? 'OCCUPIED' : 'AVAILABLE'}`);
@@ -554,9 +466,35 @@ export class SpaceBookingComponent implements OnInit {
     const creationObservables = reservationsToCreate.map(resData => this.professionalService.createReservation(resData));
 
     forkJoin(creationObservables).subscribe({
-      next: () => {
+      next: (responses: any[]) => {
         this.success = 'Reservaciones creadas exitosamente';
-        this.refreshAfterReservationChange();
+        const newReservations = responses.map(res => res.reservation).filter(Boolean);
+
+        if (newReservations.length > 0) {
+          // 1. Update local reservation arrays
+          this.myReservations = [...this.myReservations, ...newReservations];
+          if (this.selectedDate) {
+            this.selectedDayReservations = this.myReservations
+              .filter(r => this.isSameDay(new Date(r.start_time), this.selectedDate!))
+              .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+          }
+
+          // 2. Manually create and add new calendar slots for optimistic availability update
+          const newSlots = newReservations.map(res => ({
+            id: res.id, space_id: res.space_id, start_time: res.start_time, end_time: res.end_time, status: res.status,
+            user_id: res.user_id, space_name: this.spaces.find(s => s.id === res.space_id)?.name || '', user_name: ''
+          }));
+          this.calendarSlots = [...this.calendarSlots, ...newSlots];
+
+          // 3. Regenerate all relevant UI components with the new, correct state
+          this.generateDayView();
+          this.generateCalendar();
+          this.clearSelection();
+        }
+
+        // 4. Refresh only secondary data (credits)
+        this.professionalService.getCredits().subscribe(credits => this.credits = credits);
+        this.loading = false;
       },
       error: (error) => {
         this.error = error?.error?.error || 'Error al crear las reservaciones';
@@ -600,9 +538,35 @@ export class SpaceBookingComponent implements OnInit {
     const creationObservables = requestsToCreate.map(reqData => this.professionalService.createReservation(reqData));
 
     forkJoin(creationObservables).subscribe({
-      next: () => {
+      next: (responses: any[]) => {
         this.success = 'Solicitudes de reserva especial enviadas. Espera la aprobación del administrador.';
-        this.refreshAfterReservationChange();
+        const newReservations = responses.map(res => res.reservation).filter(Boolean);
+
+        if (newReservations.length > 0) {
+          // 1. Update local reservation arrays
+          this.myReservations = [...this.myReservations, ...newReservations];
+          if (this.selectedDate) {
+            this.selectedDayReservations = this.myReservations
+              .filter(r => this.isSameDay(new Date(r.start_time), this.selectedDate!))
+              .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+          }
+
+          // 2. Manually create and add new calendar slots for optimistic availability update
+          const newSlots = newReservations.map(res => ({
+            id: res.id, space_id: res.space_id, start_time: res.start_time, end_time: res.end_time, status: res.status,
+            user_id: res.user_id, space_name: this.spaces.find(s => s.id === res.space_id)?.name || '', user_name: ''
+          }));
+          this.calendarSlots = [...this.calendarSlots, ...newSlots];
+
+          // 3. Regenerate all relevant UI components with the new, correct state
+          this.generateDayView();
+          this.generateCalendar();
+          this.clearSelection();
+        }
+
+        // 4. Refresh only secondary data (credits)
+        this.professionalService.getCredits().subscribe(credits => this.credits = credits);
+        this.loading = false;
       },
       error: (error) => {
         this.error = error?.error?.error || 'Error al enviar las solicitudes';
@@ -652,18 +616,31 @@ export class SpaceBookingComponent implements OnInit {
   }
 
   backToCalendar(): void {
+    // Hide day view and clear any selections
     this.showDayView = false;
     this.resetSelection();
+    this.selectedDate = null;
+    this.selectedDayReservations = [];
+    this.selectedReservationForDetail = null;
+    // Regenerate the month calendar so no day remains marked as selected
+    this.generateCalendar();
+    // Ensure no element keeps focus styles (like :focus outlines)
+    if (typeof document !== 'undefined' && document.activeElement) {
+      const el = document.activeElement as HTMLElement;
+      if (el && typeof el.blur === 'function') {
+        el.blur();
+      }
+    }
   }
 
   previousMonth(): void {
     this.currentDate.setMonth(this.currentDate.getMonth() - 1);
-    this.generateCalendar();
+    this.loadInitialData();
   }
 
   nextMonth(): void {
     this.currentDate.setMonth(this.currentDate.getMonth() + 1);
-    this.generateCalendar();
+    this.loadInitialData();
   }
 
   isToday(date: Date): boolean {
@@ -713,11 +690,34 @@ export class SpaceBookingComponent implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
+  // Aggregate calendar slots for a given date (used for month-day previews)
+  private getSlotsForDate(date: Date): CalendarSlot[] {
+    const dateStr = this.toISODateString(date);
+    return (this.calendarSlots || []).filter((slot: CalendarSlot) => {
+      const slotDate = new Date(slot.start_time);
+      const slotStr = this.toISODateString(slotDate);
+      return slotStr === dateStr;
+    });
+  }
+
   getSpaceSlotClass(spaceSlot: SpaceSlot): string {
     if (!spaceSlot.isAvailable) return 'bg-gray-300 cursor-not-allowed';
     if (spaceSlot.isSelected) return 'bg-blue-500 text-white';
     if (spaceSlot.requiresSpecialApproval) return 'bg-orange-100 hover:bg-orange-200 cursor-pointer border-orange-300';
     return 'bg-green-100 hover:bg-green-200 cursor-pointer';
+  }
+  // Admin-like helpers to compute start/end for calendar API
+  private getCalendarStartDate(): Date {
+    const firstDay = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1);
+    const startOfWeek = new Date(firstDay);
+    startOfWeek.setDate(firstDay.getDate() - firstDay.getDay());
+    return startOfWeek;
+  }
+  private getCalendarEndDate(): Date {
+    const lastDay = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 0);
+    const endOfWeek = new Date(lastDay);
+    endOfWeek.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
+    return endOfWeek;
   }
 }
 
@@ -730,6 +730,7 @@ interface CalendarDay {
   isActive: boolean;
   isSelected: boolean;
   hasMyReservation: boolean;
+  slots?: CalendarSlot[]; // aggregated slots for this day (from admin calendar)
 }
 
 interface HourSlot {

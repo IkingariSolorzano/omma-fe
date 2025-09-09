@@ -13,7 +13,7 @@
 </div>
 
 <!-- Credits Warning -->
-<div *ngIf="credits && credits.active < 10" class="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4">
+<div *ngIf="credits && credits.active < 9" class="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4">
   <div class="flex">
     <div class="flex-shrink-0">
       <svg class="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -23,7 +23,7 @@
     <div class="ml-3">
       <p class="text-sm text-yellow-700">
         <strong>Créditos insuficientes:</strong> Tienes {{ credits.active || 0 }} créditos. 
-        Necesitas al menos 10 créditos para reservar un espacio. Contacta al administrador.
+        Necesitas al menos 9 créditos para reservar un espacio. Contacta al administrador.
       </p>
     </div>
   </div>
@@ -92,7 +92,7 @@
       <button *ngFor="let day of calendarDays" 
               (click)="selectDate(day)"
               [disabled]="!day.isActive"
-              class="h-12 text-sm rounded-md transition-colors"
+              class="min-h-[90px] p-2 rounded-md text-left transition-colors"
               [ngClass]="{
                 'bg-gray-100': !day.isCurrentMonth,
                 'text-gray-400': !day.isCurrentMonth,
@@ -105,7 +105,17 @@
                 'bg-green-50 text-green-700 cursor-pointer': day.isActive && !day.isSelected && !day.isToday,
                 'bg-gray-100 text-gray-400 cursor-not-allowed': !day.isActive
               }">
-        {{ day.day }}
+        <div class="flex items-start justify-between mb-1">
+          <span class="text-sm font-medium">{{ day.day }}</span>
+          <span *ngIf="!day.isActive" class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700">Cerrado</span>
+          <span *ngIf="day.slots?.length" class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700">{{ day.slots?.length }}</span>
+        </div>
+        <div *ngIf="day.slots?.length" class="space-y-1">
+          <div *ngFor="let slot of (day.slots | slice:0:2)" class="text-xs p-1 rounded bg-gray-50 border border-gray-200 truncate">
+            {{ slot.start_time | date:'HH:mm' }} - {{ slot.space_name }}
+          </div>
+          <div *ngIf="day.slots && day.slots.length > 2" class="text-[11px] text-gray-500">+{{ day.slots.length - 2 }} más</div>
+        </div>
       </button>
     </div>
 
@@ -122,6 +132,10 @@
       <div class="flex items-center">
         <div class="w-3 h-3 bg-gray-100 border border-gray-300 rounded mr-2"></div>
         <span class="text-gray-600">No disponible</span>
+      </div>
+      <div class="flex items-center">
+        <div class="w-3 h-3 bg-blue-200 border border-blue-300 rounded mr-2"></div>
+        <span class="text-gray-600">Mis reservas</span>
       </div>
     </div>
   </div>
@@ -263,12 +277,23 @@
             <p><strong>Fin:</strong> {{ selectedReservationForDetail.end_time | date:'h:mm a' }}</p>
           </div>
 
+          <div *ngIf="selectedReservationForDetail.status === 'confirmed'">
+            <p *ngIf="getReservationCancellationState(selectedReservationForDetail).creditsToRefund < selectedReservationForDetail.cost_credits"
+              class="text-sm text-red-600 font-semibold mt-2">
+              Se aplicará una penalización. Créditos a devolver: {{ getReservationCancellationState(selectedReservationForDetail).creditsToRefund }}.
+            </p>
+            <p *ngIf="getReservationCancellationState(selectedReservationForDetail).creditsToRefund === selectedReservationForDetail.cost_credits"
+              class="text-sm text-green-600 font-semibold mt-2">
+              Cancelación sin penalización. Se devolverán todos los créditos.
+            </p>
+          </div>
+
           <button *ngIf="getReservationCancellationState(selectedReservationForDetail).canCancel" 
                   (click)="cancelReservation(selectedReservationForDetail)" [disabled]="loading"
                   class="mt-4 w-full px-3 py-2 text-sm font-medium rounded-md transition-colors text-white"
                   [ngClass]="{
-                    'bg-red-600 hover:bg-red-700': getReservationCancellationState(selectedReservationForDetail).hasPenalty,
-                    'bg-yellow-500 hover:bg-yellow-600': !getReservationCancellationState(selectedReservationForDetail).hasPenalty
+                    'bg-red-600 hover:bg-red-700': getReservationCancellationState(selectedReservationForDetail).creditsToRefund < selectedReservationForDetail.cost_credits,
+                    'bg-yellow-500 hover:bg-yellow-600': getReservationCancellationState(selectedReservationForDetail).creditsToRefund >= selectedReservationForDetail.cost_credits
                   }">
             Cancelar
           </button>
