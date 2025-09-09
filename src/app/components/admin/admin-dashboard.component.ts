@@ -72,7 +72,8 @@ export class AdminDashboardComponent implements OnInit {
 
   // Collapsible states
   statisticsExpanded = false;
-  calendarExpanded = true;
+  calendarExpanded = false;
+  pendingReservationsExpanded = false;
 
   constructor(
     private authService: AuthService,
@@ -174,6 +175,10 @@ export class AdminDashboardComponent implements OnInit {
 
   toggleCalendar(): void {
     this.calendarExpanded = !this.calendarExpanded;
+  }
+
+  togglePendingReservations(): void {
+    this.pendingReservationsExpanded = !this.pendingReservationsExpanded;
   }
 
   logout(): void {

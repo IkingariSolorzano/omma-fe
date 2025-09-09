@@ -248,11 +248,23 @@
       </div>
     </div>
 
-    <!-- Pending Reservations Card -->
+    <!-- Collapsible Pending Reservations Card -->
     <div *ngIf="pendingReservations.length > 0" class="bg-white shadow rounded-lg">
-      <div class="px-4 py-5 sm:p-6">
-        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Reservaciones Pendientes</h3>
-        <div class="space-y-4">
+      <div class="px-4 py-3 sm:p-6">
+        <button
+          (click)="togglePendingReservations()"
+          class="w-full flex items-center justify-between text-left"
+          title="Mostrar/Ocultar reservaciones pendientes">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Reservaciones Pendientes ({{ pendingReservations.length }})
+          </h3>
+          <fa-icon 
+            [icon]="pendingReservationsExpanded ? faChevronUp : faChevronDown" 
+            class="h-5 w-5 text-gray-400">
+          </fa-icon>
+        </button>
+        
+        <div *ngIf="pendingReservationsExpanded" class="mt-4 space-y-4">
           <div *ngFor="let r of pendingReservations" class="p-4 border rounded-lg flex items-center justify-between">
             <div>
               <p class="font-semibold">{{ r.user_name }} - {{ r.space_name }}</p>
