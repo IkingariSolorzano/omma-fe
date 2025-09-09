@@ -48,6 +48,7 @@ export class CalendarViewComponent implements OnInit {
   adminSpaceSchedules: Schedule[] = [];
   availableHours: string[] = [];
   selectedSpaceId: number | null = null;
+  selectedHours: string[] = [];
   bookingForm: FormGroup;
   isSubmitting = false;
 
@@ -72,8 +73,6 @@ export class CalendarViewComponent implements OnInit {
       clientPhone: ['', Validators.required],
       clientEmail: [''],
       spaceId: [null, Validators.required],
-      duration: [1, [Validators.required, Validators.min(1)]],
-      startHour: ['', Validators.required],
       status: ['confirmed'],
       notes: ['']
     });
@@ -333,10 +332,17 @@ export class CalendarViewComponent implements OnInit {
   }
 
   getSlotsForDate(date: Date): CalendarSlot[] {
-    const dateStr = this.formatDate(date);
+    const dateStr = this.formatDateInMexicoTimezone(date);
+    console.log('getSlotsForDate - Looking for date (Mexico TZ):', dateStr);
+    
     return this.calendarSlots.filter(slot => {
+      // Parse slot date and format in Mexico timezone
       const slotDate = new Date(slot.start_time);
-      return this.formatDate(slotDate) === dateStr;
+      const slotDateStr = slotDate.toLocaleDateString('en-CA', {timeZone: "America/Mexico_City"});
+      
+      console.log('Slot start_time:', slot.start_time, 'Mexico timezone date:', slotDateStr, 'Looking for:', dateStr, 'Match:', slotDateStr === dateStr);
+      
+      return slotDateStr === dateStr;
     });
   }
 
@@ -418,17 +424,26 @@ export class CalendarViewComponent implements OnInit {
     return date.toISOString().split('T')[0];
   }
 
+  private formatDateInMexicoTimezone(date: Date): string {
+    // Format date directly in Mexico timezone without conversion
+    return date.toLocaleDateString('en-CA', {timeZone: "America/Mexico_City"});
+  }
+
+  getWeekDayName(dayIndex: number): string {
+    // Use direct index for Sunday-first array
+    return this.weekDays[dayIndex];
+  }
+
   openBookingModal(): void {
     this.showBookingModal = true;
     this.selectedSpaceId = null;
+    this.selectedHours = [];
     this.availableHours = [];
     this.bookingForm.reset({
       clientName: '',
       clientPhone: '',
       clientEmail: '',
       spaceId: null,
-      duration: 1,
-      startHour: '',
       status: 'confirmed',
       notes: ''
     });
@@ -550,42 +565,65 @@ export class CalendarViewComponent implements OnInit {
   }
 
   createReservation(): void {
-    if (this.bookingForm.invalid || !this.selectedDay) {
+    if (this.bookingForm.invalid || !this.selectedDay || this.selectedHours.length === 0) {
       this.markFormGroupTouched(this.bookingForm);
+      if (this.selectedHours.length === 0) {
+        this.error = 'Debe seleccionar al menos una hora';
+      }
       return;
     }
 
     this.isSubmitting = true;
+    this.error = '';
     
     const formValue = this.bookingForm.value;
-    const startDateTime = new Date(this.selectedDay.date);
-    const [hour, minute] = formValue.startHour.split(':').map(Number);
-    startDateTime.setHours(hour, minute || 0, 0, 0);
+    
+    // Crear múltiples reservaciones, una por cada hora seleccionada
+    const reservationPromises = this.selectedHours.map(hour => {
+      // Create date without timezone conversion - keep it simple
+      const year = this.selectedDay!.date.getFullYear();
+      const month = this.selectedDay!.date.getMonth();
+      const day = this.selectedDay!.date.getDate();
+      const [hourNum, minute] = hour.split(':').map(Number);
+      
+      // Create date directly without timezone conversions
+      const startDateTime = new Date(year, month, day, hourNum, minute || 0, 0, 0);
+      
+      console.log('Creating reservation for:', {
+        selectedDate: this.selectedDay!.date,
+        hour: hour,
+        finalDateTime: startDateTime,
+        isoString: startDateTime.toISOString()
+      });
 
-    const reservationRequest = {
-      client_name: formValue.clientName,
-      client_phone: formValue.clientPhone,
-      client_email: formValue.clientEmail || undefined,
-      space_id: formValue.spaceId,
-      start_time: startDateTime.toISOString(),
-      duration: parseInt(formValue.duration, 10),
-      status: formValue.status,
-      notes: formValue.notes || undefined
-    };
+      const reservationRequest = {
+        client_name: formValue.clientName,
+        client_phone: formValue.clientPhone,
+        client_email: formValue.clientEmail || undefined,
+        space_id: formValue.spaceId,
+        start_time: startDateTime.toISOString(),
+        duration: 1, // Cada reservación es de 1 hora
+        status: formValue.status,
+        notes: formValue.notes || undefined
+      };
 
-    this.adminService.createExternalReservation(reservationRequest).subscribe({
-      next: (response: any) => {
-        console.log('Reserva creada exitosamente:', response);
+      return this.adminService.createExternalReservation(reservationRequest).toPromise();
+    });
+
+    // Ejecutar todas las reservaciones
+    Promise.all(reservationPromises).then(
+      (responses) => {
+        console.log('Reservas creadas exitosamente:', responses);
         this.closeBookingModal();
-        this.loadCalendar(); // Refresh calendar to show new reservation
-        // You could add a success message here
-      },
-      error: (error: any) => {
-        console.error('Error al crear la reserva:', error);
-        this.error = error?.error?.error || 'Error al crear la reserva';
+        this.loadCalendar(); // Refresh calendar to show new reservations
+      }
+    ).catch(
+      (error) => {
+        console.error('Error al crear las reservas:', error);
+        this.error = error?.error?.error || 'Error al crear las reservas';
         this.isSubmitting = false;
       }
-    });
+    );
   }
 
   selectSpace(spaceId: number): void {
@@ -639,7 +677,20 @@ export class CalendarViewComponent implements OnInit {
   }
 
   selectHour(hour: string): void {
-    this.bookingForm.patchValue({ startHour: hour });
+    const index = this.selectedHours.indexOf(hour);
+    if (index > -1) {
+      // Deseleccionar hora
+      this.selectedHours.splice(index, 1);
+    } else {
+      // Seleccionar hora
+      this.selectedHours.push(hour);
+    }
+    // Ordenar las horas seleccionadas
+    this.selectedHours.sort();
+  }
+
+  isHourSelected(hour: string): boolean {
+    return this.selectedHours.includes(hour);
   }
 
   selectSpaceFilter(spaceId: string): void {
