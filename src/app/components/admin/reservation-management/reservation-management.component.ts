@@ -118,10 +118,8 @@ export class ReservationManagementComponent implements OnInit {
   loadReservations(): void {
     this.loading = true;
     const filters = this.filterForm.value;
-    console.log('Loading reservations with filters:', filters);
     this.adminService.getAllReservations(filters).subscribe({
       next: (reservations) => {
-        console.log('Raw reservations received:', reservations);
         this.reservations = reservations;
         this.groupReservations();
         this.loading = false;
@@ -152,13 +150,9 @@ export class ReservationManagementComponent implements OnInit {
   }
 
   loadSpaces(): void {
-    console.log('Starting to load spaces...');
     this.adminService.getAllSpaces().subscribe({
       next: (spaces: Space[]) => {
-        console.log('Raw spaces response:', spaces);
         this.spaces = spaces || [];
-        console.log('Spaces loaded and assigned:', this.spaces);
-        console.log('Spaces array length:', this.spaces.length);
       },
       error: (error: any) => {
         console.error('Error loading spaces:', error);
@@ -427,7 +421,6 @@ export class ReservationManagementComponent implements OnInit {
 
     // Ensure spaces is an array
     if (!Array.isArray(this.spaces)) {
-      console.log('Spaces is not an array:', this.spaces);
       this.availableSpaces = [];
       return;
     }
@@ -437,17 +430,10 @@ export class ReservationManagementComponent implements OnInit {
     const selectedDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
     const dayOfWeek = selectedDate.getDay();
     
-    console.log('Loading spaces for date:', date, 'dayOfWeek:', dayOfWeek);
-    console.log('Selected date object:', selectedDate);
-    console.log('Business hours:', this.businessHours);
-    console.log('Space schedules:', this.spaceSchedules);
-    console.log('Spaces array:', this.spaces);
-    
     // Check if this day has business hours (is open)
     const businessHour = this.businessHours.find(bh => bh.day_of_week === dayOfWeek);
     
     if (!businessHour || businessHour.is_closed) {
-      console.log('No business hours or closed for day:', dayOfWeek);
       this.availableSpaces = [];
       return;
     }
@@ -459,11 +445,8 @@ export class ReservationManagementComponent implements OnInit {
         schedule.day_of_week === dayOfWeek &&
         schedule.is_active !== false
       );
-      console.log(`Space ${space.name} (ID: ${space.id}) has schedule for day ${dayOfWeek}:`, hasScheduleForDay);
       return hasScheduleForDay;
     });
-    
-    console.log('Available spaces:', this.availableSpaces);
     
     // If a space was already selected, load its time slots
     if (this.selectedEditSpaceId) {

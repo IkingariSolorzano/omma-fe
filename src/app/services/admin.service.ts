@@ -186,6 +186,7 @@ export interface CalendarSlot {
   end_time: string;
   status: 'available' | 'reserved' | 'occupied' | 'confirmed' | 'pending' | 'cancelled';
   user_name?: string;
+  user_phone?: string; // Teléfono para WhatsApp
   reservation_id?: number;
 }
 
@@ -234,7 +235,7 @@ export interface ClosedDate {
 export class AdminService {
   private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   // User Management
   createUser(userData: CreateUserRequest): Observable<User> {
@@ -259,6 +260,10 @@ export class AdminService {
     return this.http.put(`${this.apiUrl}/admin/users/${userId}/password`, passwordData);
   }
 
+  toggleUserStatus(userId: number): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/admin/users/${userId}/toggle-status`, {});
+  }
+
   addCredits(creditsData: AddCreditsRequest): Observable<any> {
     return this.http.post(`${this.apiUrl}/admin/credits`, creditsData);
   }
@@ -280,7 +285,7 @@ export class AdminService {
   }
 
   // Credit lots (per-lot)
-  getUserCreditLots(userId: number): Observable<{ credits: CreditLot[]; active_credits: number }>{
+  getUserCreditLots(userId: number): Observable<{ credits: CreditLot[]; active_credits: number }> {
     return this.http.get<any>(`${this.apiUrl}/admin/users/${userId}/credit-lots`).pipe(
       map((res: any) => ({
         credits: (res?.credits ?? res?.data ?? []) as CreditLot[],
@@ -436,15 +441,15 @@ export class AdminService {
     let queryParams = `period=${params.period}&start_date=${params.start_date}`;
     if (params.end_date) queryParams += `&end_date=${params.end_date}`;
     if (params.space_ids) queryParams += `&space_ids=${params.space_ids}`;
-    
-    return this.http.get<{reservations: CalendarSlot[]}>(`${this.apiUrl}/calendar?${queryParams}`)
+
+    return this.http.get<{ reservations: CalendarSlot[] }>(`${this.apiUrl}/calendar?${queryParams}`)
       .pipe(map(response => response.reservations || []));
   }
 
   getAvailableSlots(date: string, spaceId?: number): Observable<CalendarSlot[]> {
     let queryParams = `date=${date}`;
     if (spaceId) queryParams += `&space_id=${spaceId}`;
-    
+
     return this.http.get<CalendarSlot[]>(`${this.apiUrl}/calendar/available?${queryParams}`);
   }
 
@@ -496,6 +501,25 @@ export class AdminService {
   createExternalReservation(reservation: CreateExternalReservationRequest): Observable<any> {
     return this.http.post(`${this.apiUrl}/admin/reservations/external`, reservation);
   }
+
+  // External Client Management
+  searchExternalClients(query: string): Observable<{ clients: ExternalClient[] }> {
+    return this.http.get<{ clients: ExternalClient[] }>(`${this.apiUrl}/admin/external-clients/search`, {
+      params: { q: query }
+    });
+  }
+
+  getFrequentExternalClients(limit: number = 20): Observable<{ clients: ExternalClientWithCount[] }> {
+    return this.http.get<{ clients: ExternalClientWithCount[] }>(`${this.apiUrl}/admin/external-clients/frequent`, {
+      params: { limit: limit.toString() }
+    });
+  }
+
+  getExternalClientByPhone(phone: string): Observable<{ client: ExternalClient }> {
+    return this.http.get<{ client: ExternalClient }>(`${this.apiUrl}/admin/external-clients/by-phone`, {
+      params: { phone }
+    });
+  }
 }
 
 export interface CreateExternalReservationRequest {
@@ -514,4 +538,17 @@ export interface UpdateReservationRequest {
   start_time?: string;
   end_time?: string;
   notes?: string;
+}
+
+export interface ExternalClient {
+  id: number;
+  name: string;
+  phone: string;
+  email?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExternalClientWithCount extends ExternalClient {
+  reservation_count: number;
 }

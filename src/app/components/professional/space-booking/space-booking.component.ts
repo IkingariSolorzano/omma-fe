@@ -222,8 +222,6 @@ export class SpaceBookingComponent implements OnInit {
     this.calendarDays = [];
     
     // Debug: Log business hours data
-    console.log('Business Hours:', this.businessHours);
-    console.log('Closed Dates:', this.closedDates);
     
     for (let i = 0; i < 42; i++) {
       const date = new Date(startDate);
@@ -237,9 +235,6 @@ export class SpaceBookingComponent implements OnInit {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const isAfterToday = date >= today;
-      
-      console.log(`Date: ${date.toDateString()}, DayOfWeek: ${dayOfWeek}, BusinessHour:`, businessHour, 
-                  `IsClosedDate: ${isClosedDate}, IsAfterToday: ${isAfterToday}`);
       
       // Simplified logic for debugging
       let isActive = false;
@@ -392,7 +387,7 @@ export class SpaceBookingComponent implements OnInit {
       return (requestedStart < slotEnd && requestedEnd > slotStart);
     });
     
-    console.log(`Space ${space.id} at ${hour}:00 on ${this.selectedDate.toDateString()}: ${hasExistingReservation ? 'OCCUPIED' : 'AVAILABLE'}`);
+    // console.log(`Space ${space.id} at ${hour}:00 on ${this.selectedDate.toDateString()}: ${hasExistingReservation ? 'OCCUPIED' : 'AVAILABLE'}`);
     
     return !hasExistingReservation;
   }

@@ -426,13 +426,26 @@
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
-                        [class.bg-green-100]="user.is_active"
-                        [class.text-green-800]="user.is_active"
-                        [class.bg-red-100]="!user.is_active"
-                        [class.text-red-800]="!user.is_active">
-                    {{ user.is_active ? 'Activo' : 'Inactivo' }}
-                  </span>
+                  <div class="flex items-center gap-2">
+                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                          [class.bg-green-100]="user.is_active"
+                          [class.text-green-800]="user.is_active"
+                          [class.bg-red-100]="!user.is_active"
+                          [class.text-red-800]="!user.is_active">
+                      {{ user.is_active ? 'Activo' : 'Inactivo' }}
+                    </span>
+                    <button 
+                      (click)="toggleUserStatus(user)"
+                      [title]="user.is_active ? 'Desactivar usuario' : 'Activar usuario'"
+                      class="p-1 rounded hover:bg-gray-100 transition-colors">
+                      <svg *ngIf="user.is_active" class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                      </svg>
+                      <svg *ngIf="!user.is_active" class="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                    </button>
+                  </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex flex-col items-start gap-1 text-left">
                   <button 

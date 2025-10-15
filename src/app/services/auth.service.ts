@@ -68,7 +68,6 @@ export class AuthService {
   }
 
   login(credentials: LoginRequest): Observable<LoginResponse> {
-    console.log(credentials);
     return this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, credentials)
       .pipe(
         tap(response => {
@@ -95,7 +94,6 @@ export class AuthService {
 
   // Method to clear session when token expires
   clearExpiredSession(): void {
-    console.log('Clearing expired session...');
     this.logout();
   }
 

@@ -73,4 +73,11 @@ export class ProfessionalDirectoryComponent implements OnInit {
     this.selectedSpecialty = '';
     this.filteredProfessionals = this.professionals;
   }
+  
+  getWhatsAppLink(professional: Professional): string {
+    const phone = professional.phone.replace(/\D/g, '');
+    const fullPhone = phone.startsWith('52') ? phone : '52' + phone;
+    const message = `Hola ${professional.name}, me gustaría agendar una cita. ¿Cuándo tienes disponibilidad?`;
+    return `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
+  }
 }

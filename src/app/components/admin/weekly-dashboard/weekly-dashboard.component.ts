@@ -1,8 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import { AdminService, Space, Reservation } from '../../../services/admin.service';
 import { BusinessHoursService, BusinessHour } from '../../../services/business-hours.service';
+import { WebsocketService, ReservationEvent } from '../../../services/websocket.service';
+import { AuthService } from '../../../services/auth.service';
+import { ToastService } from '../../../services/toast.service';
 
 interface ScheduleSlot {
   time: string;
@@ -22,7 +25,7 @@ interface ScheduleSlot {
   templateUrl: './weekly-dashboard.component.html',
   styleUrl: './weekly-dashboard.component.scss'
 })
-export class WeeklyDashboardComponent implements OnInit {
+export class WeeklyDashboardComponent implements OnInit, OnDestroy {
   spaces: Space[] = [];
   scheduleSlots: ScheduleSlot[] = [];
   businessHours: BusinessHour[] = [];
@@ -30,6 +33,9 @@ export class WeeklyDashboardComponent implements OnInit {
   currentDay: Date = new Date();
   loading = false;
   error = '';
+
+  // WebSocket subscriptions
+  private wsSubscriptions: Subscription[] = [];
 
   // Horarios disponibles (7 AM a 10 PM)
   timeSlots = [
@@ -40,10 +46,14 @@ export class WeeklyDashboardComponent implements OnInit {
 
   constructor(
     private adminService: AdminService,
-    private businessHoursService: BusinessHoursService
+    private businessHoursService: BusinessHoursService,
+    private wsService: WebsocketService,
+    private authService: AuthService,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
+    this.connectWebSocket();
     this.loadData();
   }
 
@@ -132,22 +142,28 @@ export class WeeklyDashboardComponent implements OnInit {
   }
 
   isBusinessHour(hour: number): boolean {
-    // Asumir horario de negocio de 8 AM a 6 PM de lunes a viernes
-    const currentDate = new Date();
-    const dayOfWeek = currentDate.getDay(); // 0 = Domingo, 1 = Lunes, etc.
-
-    // Solo días de semana (lunes a viernes)
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
+    const dayOfWeek = this.currentDay.getDay(); // 0 = Domingo, 1 = Lunes, etc.
+    
+    // Buscar el horario de negocio para este día
+    const businessHour = this.businessHours.find(bh => bh.day_of_week === dayOfWeek);
+    
+    if (!businessHour) {
+      return false; // No hay horario definido para este día
+    }
+    
+    // Si el día está marcado como cerrado
+    if (businessHour.is_closed) {
       return false;
     }
-
-    // Solo horas de 8 AM a 6 PM
-    return hour >= 8 && hour <= 18;
+    
+    // Verificar si la hora está dentro del rango de horario de negocio
+    const startHour = parseInt(businessHour.start_time.split(':')[0]);
+    const endHour = parseInt(businessHour.end_time.split(':')[0]);
+    
+    return hour >= startHour && hour < endHour;
   }
 
   findReservationForSpaceAndHour(spaceId: number, hour: number): Reservation | undefined {
-    console.log(`=== DEBUG: Finding reservation for space ${spaceId} at hour ${hour} ===`);
-
     const result = this.reservations.find(reservation => {
       if (reservation.space_id !== spaceId) {
         return false;
@@ -161,24 +177,8 @@ export class WeeklyDashboardComponent implements OnInit {
       const slotTime = new Date(this.currentDay.toLocaleString("en-US", {timeZone: "America/Mexico_City"}));
       slotTime.setHours(hour, 0, 0, 0);
 
-      console.log(`Comparing reservation:`, {
-        reservationId: reservation.id,
-        spaceId: reservation.space_id,
-        startTime: reservationStart.toISOString(),
-        endTime: reservationEnd.toISOString(),
-        slotTime: slotTime.toISOString(),
-        hour: hour,
-        isWithinRange: slotTime >= reservationStart && slotTime < reservationEnd
-      });
-
       return slotTime >= reservationStart && slotTime < reservationEnd;
     });
-
-    if (result) {
-      console.log('=== FOUND RESERVATION ===', result);
-    } else {
-      console.log('=== NO RESERVATION FOUND ===');
-    }
 
     return result;
   }
@@ -247,8 +247,10 @@ export class WeeklyDashboardComponent implements OnInit {
     const spaceSlot = slot.spaces[spaceId];
 
     if (spaceSlot.status === 'booked' && spaceSlot.reservation) {
-      // Mostrar nombre del usuario que reservó
-      return spaceSlot.reservation.user?.name || 'Reservado';
+      // Mostrar nombre del usuario registrado o del cliente externo
+      return spaceSlot.reservation.user?.name || 
+             spaceSlot.reservation.external_client?.name || 
+             'Reservado';
     }
 
     switch (spaceSlot.status) {
@@ -261,5 +263,64 @@ export class WeeklyDashboardComponent implements OnInit {
       default:
         return '';
     }
+  }
+
+  // WebSocket methods
+  private connectWebSocket(): void {
+    const token = this.authService.getToken();
+    if (!token) return;
+
+    this.wsService.connect(token);
+
+    // Subscribe to reservation events
+    const createdSub = this.wsService.onReservationCreated().subscribe(event => {
+      this.handleReservationEvent(event, 'created');
+    });
+
+    const updatedSub = this.wsService.onReservationUpdated().subscribe(event => {
+      this.handleReservationEvent(event, 'updated');
+    });
+
+    const cancelledSub = this.wsService.onReservationCancelled().subscribe(event => {
+      this.handleReservationEvent(event, 'cancelled');
+    });
+
+    const approvedSub = this.wsService.onReservationApproved().subscribe(event => {
+      this.handleReservationEvent(event, 'approved');
+    });
+
+    const refreshSub = this.wsService.onCalendarRefresh().subscribe(() => {
+      this.loadData();
+    });
+
+    // Store subscriptions for cleanup
+    this.wsSubscriptions.push(createdSub, updatedSub, cancelledSub, approvedSub, refreshSub);
+  }
+
+  private handleReservationEvent(event: ReservationEvent, action: string): void {
+    // Show toast notification
+    const actionText = this.getActionText(action);
+    this.toastService.info(`Reservación ${actionText}: ${event.user_name} - ${event.space_name}`, 4000);
+    
+    // Reload data to show updated reservations
+    this.loadData();
+  }
+
+  private getActionText(action: string): string {
+    const actions: { [key: string]: string } = {
+      'created': 'creada',
+      'updated': 'actualizada',
+      'cancelled': 'cancelada',
+      'approved': 'aprobada'
+    };
+    return actions[action] || action;
+  }
+
+  ngOnDestroy(): void {
+    // Unsubscribe from all WebSocket subscriptions
+    this.wsSubscriptions.forEach(sub => sub.unsubscribe());
+    
+    // Disconnect WebSocket
+    this.wsService.disconnect();
   }
 }

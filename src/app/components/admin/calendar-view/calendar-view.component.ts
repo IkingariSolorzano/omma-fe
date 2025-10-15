@@ -1,14 +1,19 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { AdminService, CalendarSlot, CalendarParams, Space, BusinessHour, Schedule, ClosedDate, CreateExternalReservationRequest } from '../../../services/admin.service';
+import { AdminService, CalendarSlot, CalendarParams, Space, BusinessHour, Schedule, ClosedDate, CreateExternalReservationRequest, ExternalClient, ExternalClientWithCount } from '../../../services/admin.service';
 import { BusinessHoursService } from '../../../services/business-hours.service';
 import { ProfessionalService } from '../../../services/professional.service';
+import { WebsocketService, ReservationEvent } from '../../../services/websocket.service';
+import { AuthService } from '../../../services/auth.service';
+import { ToastService } from '../../../services/toast.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faBuilding,
   faThLarge
 } from '@fortawesome/free-solid-svg-icons';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
 interface CalendarDay {
   date: Date;
@@ -29,7 +34,7 @@ interface CalendarWeek {
   templateUrl: './calendar-view.component.html',
   styleUrls: ['./calendar-view.component.scss']
 })
-export class CalendarViewComponent implements OnInit {
+export class CalendarViewComponent implements OnInit, OnDestroy {
   calendarSlots: CalendarSlot[] = [];
   spaces: Space[] = [];
   businessHours: BusinessHour[] = [];
@@ -51,6 +56,15 @@ export class CalendarViewComponent implements OnInit {
   selectedHours: string[] = [];
   bookingForm: FormGroup;
   isSubmitting = false;
+  
+  // Autocomplete para clientes externos
+  clientSuggestions: ExternalClient[] = [];
+  frequentClients: ExternalClientWithCount[] = [];
+  showSuggestions = false;
+  nameInputHasFocus = false;
+
+  // WebSocket subscriptions
+  private wsSubscriptions: Subscription[] = [];
 
   // FontAwesome icons
   faBuilding = faBuilding;
@@ -61,7 +75,10 @@ export class CalendarViewComponent implements OnInit {
     private adminService: AdminService,
     private cdr: ChangeDetectorRef,
     private businessHoursService: BusinessHoursService,
-    private professionalService: ProfessionalService
+    private professionalService: ProfessionalService,
+    private wsService: WebsocketService,
+    private authService: AuthService,
+    private toastService: ToastService
   ) {
     this.filterForm = this.fb.group({
       view_type: ['month'],
@@ -79,11 +96,47 @@ export class CalendarViewComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Conectar WebSocket
+    this.connectWebSocket();
+    
+    // Cargar datos necesarios primero, luego el calendario
     this.loadSpaces();
+    this.loadSpaceSchedules();
+    
+    // Cargar business hours y closed dates ANTES del calendario
     this.loadBusinessHours();
     this.loadClosedDates();
-    this.loadSpaceSchedules();
-    this.loadCalendar();
+    
+    // Esperar un momento para asegurar que los datos se carguen
+    setTimeout(() => {
+      this.loadCalendar();
+    }, 100);
+    
+    // Setup autocomplete para nombre de cliente
+    this.bookingForm.get('clientName')?.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged()
+      )
+      .subscribe(value => {
+        if (value && value.length >= 2) {
+          this.searchClients(value);
+        } else {
+          this.clientSuggestions = [];
+          this.showSuggestions = false;
+        }
+      });
+    
+    // Setup autocompletado por teléfono
+    this.bookingForm.get('clientPhone')?.valueChanges
+      .pipe(
+        debounceTime(500)
+      )
+      .subscribe(phone => {
+        if (phone && phone.length === 10) {
+          this.checkExistingClientByPhone(phone);
+        }
+      });
   }
 
   loadSpaces(): void {
@@ -157,13 +210,6 @@ export class CalendarViewComponent implements OnInit {
     const startDate = this.getCalendarStartDate();
     const endDate = this.getCalendarEndDate();
 
-    console.log('Loading calendar with params:', {
-      startDate: this.formatDate(startDate),
-      endDate: this.formatDate(endDate),
-      currentView: this.currentView,
-      spaceIds: this.filterForm.value.space_ids
-    });
-
     const params: CalendarParams = {
       period: 'custom',
       start_date: this.formatDate(startDate),
@@ -173,7 +219,6 @@ export class CalendarViewComponent implements OnInit {
 
     this.adminService.getCalendar(params).subscribe({
       next: (slots) => {
-        console.log('Calendar data received:', slots);
         this.calendarSlots = slots || [];
         this.buildCalendarView();
         this.loading = false;
@@ -333,21 +378,20 @@ export class CalendarViewComponent implements OnInit {
 
   getSlotsForDate(date: Date): CalendarSlot[] {
     const dateStr = this.formatDateInMexicoTimezone(date);
-    console.log('getSlotsForDate - Looking for date (Mexico TZ):', dateStr);
     
     return this.calendarSlots.filter(slot => {
       // Parse slot date and format in Mexico timezone
       const slotDate = new Date(slot.start_time);
       const slotDateStr = slotDate.toLocaleDateString('en-CA', {timeZone: "America/Mexico_City"});
       
-      console.log('Slot start_time:', slot.start_time, 'Mexico timezone date:', slotDateStr, 'Looking for:', dateStr, 'Match:', slotDateStr === dateStr);
+      
       
       return slotDateStr === dateStr;
     });
   }
 
   selectDay(day: CalendarDay): void {
-    console.log('selectDay called with:', day.date, 'isEnabled:', day.isEnabled);
+    
     
     // Always allow selection, even for disabled days to show "closed" message
     const updatedDay: CalendarDay = {
@@ -356,7 +400,6 @@ export class CalendarViewComponent implements OnInit {
     };
     
     this.selectedDay = updatedDay;
-    console.log('Day selected:', this.selectedDay.date, 'Slots:', this.selectedDay.slots.length);
     
     // Force change detection
     this.cdr.detectChanges();
@@ -439,6 +482,8 @@ export class CalendarViewComponent implements OnInit {
     this.selectedSpaceId = null;
     this.selectedHours = [];
     this.availableHours = [];
+    this.clientSuggestions = [];
+    this.showSuggestions = false;
     this.bookingForm.reset({
       clientName: '',
       clientPhone: '',
@@ -447,6 +492,9 @@ export class CalendarViewComponent implements OnInit {
       status: 'confirmed',
       notes: ''
     });
+    
+    // Cargar clientes frecuentes al abrir el modal
+    this.loadFrequentClients();
   }
 
   closeBookingModal(): void {
@@ -457,7 +505,6 @@ export class CalendarViewComponent implements OnInit {
   loadSpaceSchedules(): void {
     this.professionalService.getSchedules().subscribe({
       next: (response: any) => {
-        console.log('Raw schedules response:', response);
         // Handle different response formats
         if (Array.isArray(response)) {
           this.adminSpaceSchedules = response;
@@ -466,10 +513,8 @@ export class CalendarViewComponent implements OnInit {
         } else if (response && Array.isArray(response.data)) {
           this.adminSpaceSchedules = response.data;
         } else {
-          console.warn('Unexpected schedules response format:', response);
           this.adminSpaceSchedules = [];
         }
-        console.log('Admin space schedules loaded:', this.adminSpaceSchedules);
       },
       error: (error) => {
         console.error('Error loading space schedules:', error);
@@ -588,13 +633,6 @@ export class CalendarViewComponent implements OnInit {
       
       // Create date directly without timezone conversions
       const startDateTime = new Date(year, month, day, hourNum, minute || 0, 0, 0);
-      
-      console.log('Creating reservation for:', {
-        selectedDate: this.selectedDay!.date,
-        hour: hour,
-        finalDateTime: startDateTime,
-        isoString: startDateTime.toISOString()
-      });
 
       const reservationRequest = {
         client_name: formValue.clientName,
@@ -613,7 +651,6 @@ export class CalendarViewComponent implements OnInit {
     // Ejecutar todas las reservaciones
     Promise.all(reservationPromises).then(
       (responses) => {
-        console.log('Reservas creadas exitosamente:', responses);
         this.closeBookingModal();
         this.loadCalendar(); // Refresh calendar to show new reservations
       }
@@ -703,5 +740,184 @@ export class CalendarViewComponent implements OnInit {
       const control = formGroup.get(key);
       control?.markAsTouched();
     });
+  }
+  
+  // Métodos para autocomplete de clientes externos
+  searchClients(query: string): void {
+    this.adminService.searchExternalClients(query).subscribe({
+      next: (response) => {
+        this.clientSuggestions = response.clients;
+        // Solo mostrar si el input tiene foco
+        this.showSuggestions = this.nameInputHasFocus && this.clientSuggestions.length > 0;
+      },
+      error: (error) => {
+        console.error('Error searching clients:', error);
+        this.clientSuggestions = [];
+        this.showSuggestions = false;
+      }
+    });
+  }
+  
+  loadFrequentClients(): void {
+    this.adminService.getFrequentExternalClients(5).subscribe({
+      next: (response) => {
+        this.frequentClients = response.clients;
+      },
+      error: (error) => {
+        console.error('Error loading frequent clients:', error);
+        this.frequentClients = [];
+      }
+    });
+  }
+  
+  checkExistingClientByPhone(phone: string): void {
+    this.adminService.getExternalClientByPhone(phone).subscribe({
+      next: (response) => {
+        // Cliente encontrado, autocompletar datos
+        this.bookingForm.patchValue({
+          clientName: response.client.name,
+          clientEmail: response.client.email || ''
+        });
+      },
+      error: (error) => {
+        // Cliente no encontrado, no hacer nada (es un cliente nuevo)
+      }
+    });
+  }
+  
+  selectClient(client: ExternalClient): void {
+    this.bookingForm.patchValue({
+      clientName: client.name,
+      clientPhone: client.phone,
+      clientEmail: client.email || ''
+    });
+    this.hideSuggestions();
+  }
+  
+  selectFrequentClient(client: ExternalClientWithCount): void {
+    this.bookingForm.patchValue({
+      clientName: client.name,
+      clientPhone: client.phone,
+      clientEmail: client.email || ''
+    });
+    this.hideSuggestions();
+  }
+  
+  onNameInputBlur(): void {
+    this.nameInputHasFocus = false;
+    // Delay para permitir que el click en la sugerencia se procese primero
+    setTimeout(() => {
+      this.showSuggestions = false;
+    }, 200);
+  }
+  
+  onNameInputFocus(): void {
+    this.nameInputHasFocus = true;
+    // Mostrar sugerencias solo si hay texto y resultados
+    const nameValue = this.bookingForm.get('clientName')?.value;
+    if (nameValue && nameValue.length >= 2 && this.clientSuggestions.length > 0) {
+      this.showSuggestions = true;
+    }
+  }
+  
+  hideSuggestions(): void {
+    this.showSuggestions = false;
+    this.clientSuggestions = [];
+  }
+  
+  // Método para generar enlace de WhatsApp
+  getWhatsAppLink(slot: CalendarSlot): string {
+    if (!slot.user_phone) {
+      return '#';
+    }
+    
+    // Limpiar el teléfono (quitar espacios, guiones, etc.)
+    const phone = slot.user_phone.replace(/\D/g, '');
+    const clientName = slot.user_name || 'Cliente';
+    const date = new Date(slot.start_time).toLocaleDateString('es-MX', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    const time = new Date(slot.start_time).toLocaleTimeString('es-MX', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    const spaceName = slot.space_name;
+    
+    const message = `Hola ${clientName}, tenemos registrada tu reservación para el ${date} a las ${time} en ${spaceName}. ¿Confirmas tu asistencia?`;
+    
+    // Formato de WhatsApp: https://wa.me/52XXXXXXXXXX?text=mensaje
+    // Agregar código de país de México (52) si no lo tiene
+    const fullPhone = phone.startsWith('52') ? phone : '52' + phone;
+    return `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
+  }
+  
+  hasPhoneNumber(slot: CalendarSlot): boolean {
+    return !!slot.user_phone && slot.user_phone.length > 0;
+  }
+
+  // WebSocket methods
+  private connectWebSocket(): void {
+    const token = this.authService.getToken();
+    if (!token) return;
+
+    this.wsService.connect(token);
+
+    // Subscribe to reservation events
+    const createdSub = this.wsService.onReservationCreated().subscribe(event => {
+      this.handleReservationEvent(event, 'created');
+    });
+
+    const updatedSub = this.wsService.onReservationUpdated().subscribe(event => {
+      this.handleReservationEvent(event, 'updated');
+    });
+
+    const cancelledSub = this.wsService.onReservationCancelled().subscribe(event => {
+      this.handleReservationEvent(event, 'cancelled');
+    });
+
+    const approvedSub = this.wsService.onReservationApproved().subscribe(event => {
+      this.handleReservationEvent(event, 'approved');
+    });
+
+    const refreshSub = this.wsService.onCalendarRefresh().subscribe(() => {
+      this.loadCalendar();
+    });
+
+    // Store subscriptions for cleanup
+    this.wsSubscriptions.push(createdSub, updatedSub, cancelledSub, approvedSub, refreshSub);
+  }
+
+  private handleReservationEvent(event: ReservationEvent, action: string): void {
+    // Show notification
+    this.showNotification(`Reservación ${this.getActionText(action)}: ${event.user_name} - ${event.space_name}`);
+    
+    // Reload calendar to show updated data
+    this.loadCalendar();
+  }
+
+  private getActionText(action: string): string {
+    const actions: { [key: string]: string } = {
+      'created': 'creada',
+      'updated': 'actualizada',
+      'cancelled': 'cancelada',
+      'approved': 'aprobada'
+    };
+    return actions[action] || action;
+  }
+
+  private showNotification(message: string): void {
+    // Show toast notification
+    this.toastService.info(message, 4000);
+  }
+
+  ngOnDestroy(): void {
+    // Unsubscribe from all WebSocket subscriptions
+    this.wsSubscriptions.forEach(sub => sub.unsubscribe());
+    
+    // Disconnect WebSocket
+    this.wsService.disconnect();
   }
 }

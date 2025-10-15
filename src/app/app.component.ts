@@ -3,10 +3,11 @@ import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { NgIf } from '@angular/common';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { FloatingWhatsappComponent } from './components/floating-whatsapp/floating-whatsapp.component';
+import { ToastComponent } from './components/toast/toast.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, NgIf, NavbarComponent, FloatingWhatsappComponent],
+  imports: [RouterOutlet, NgIf, NavbarComponent, FloatingWhatsappComponent, ToastComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })

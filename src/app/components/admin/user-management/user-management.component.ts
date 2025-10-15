@@ -496,4 +496,39 @@ export class UserManagementComponent implements OnInit {
   toggleConfirmPasswordFieldType() {
     this.confirmPasswordFieldType = this.confirmPasswordFieldType === 'password' ? 'text' : 'password';
   }
+
+  toggleUserStatus(user: User): void {
+    const action = user.is_active ? 'desactivar' : 'activar';
+    const confirmMessage = `¿Estás seguro de que deseas ${action} a ${user.name}?`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    this.loading = true;
+    this.error = '';
+    
+    this.adminService.toggleUserStatus(user.id).subscribe({
+      next: (response) => {
+        this.success = response.message || `Usuario ${action}do exitosamente`;
+        // Actualizar el estado local del usuario
+        user.is_active = !user.is_active;
+        this.loading = false;
+        
+        // Limpiar mensaje después de 3 segundos
+        setTimeout(() => {
+          this.success = '';
+        }, 3000);
+      },
+      error: (error) => {
+        this.error = error.error?.error || `Error al ${action} usuario`;
+        this.loading = false;
+        
+        // Limpiar mensaje después de 5 segundos
+        setTimeout(() => {
+          this.error = '';
+        }, 5000);
+      }
+    });
+  }
 }

@@ -72,7 +72,7 @@ export class AdminDashboardComponent implements OnInit {
 
   // Collapsible states
   statisticsExpanded = false;
-  calendarExpanded = false;
+  calendarExpanded = true; // Desplegado por defecto para mostrar la vista semanal
   pendingReservationsExpanded = false;
 
   constructor(
@@ -130,7 +130,6 @@ export class AdminDashboardComponent implements OnInit {
   selectSpace(spaceId: string): void {
     this.selectedSpaceId = spaceId;
     // Aquí puedes agregar lógica adicional para filtrar el dashboard por espacio
-    console.log('Space selected:', spaceId);
   }
 
   loadPendingReservations(): void {

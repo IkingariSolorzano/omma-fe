@@ -37,6 +37,8 @@ export interface Professional {
   specialty: string;
   description: string;
   credits: number;
+  profile_image?: string;
+  created_at?: string;
 }
 
 @Injectable({
@@ -115,8 +117,13 @@ export class ProfessionalService {
   }
 
   // Public directory
-  getProfessionalDirectory(): Observable<Professional[]> {
-    return this.http.get<Professional[]>(`${this.apiUrl}/professionals`);
+  getProfessionalDirectory(searchQuery?: string, specialty?: string): Observable<Professional[]> {
+    let params: any = {};
+    if (searchQuery) params.q = searchQuery;
+    if (specialty) params.specialty = specialty;
+    
+    return this.http.get<{professionals: Professional[]}>(`${this.apiUrl}/professionals`, { params })
+      .pipe(map(response => response.professionals));
   }
 
   // Profile management

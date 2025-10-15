@@ -422,18 +422,6 @@ export class SpaceManagementComponent implements OnInit {
     return day ? day.label : 'N/A';
   }
 
-  debugScheduleData(): void {
-    console.log('=== SCHEDULE DEBUG INFO ===');
-    console.log('Selected Space ID:', this.selectedSpaceId);
-    console.log('Existing Schedules:', this.existingSchedules);
-    console.log('Weekly Schedule:', this.weeklySchedule);
-    console.log('Days of Week mapping:', this.daysOfWeek);
-    
-    // Check each existing schedule
-    this.existingSchedules.forEach(schedule => {
-      console.log(`Schedule ID ${schedule.id}: day_of_week=${schedule.day_of_week}, start_time=${schedule.start_time}, end_time=${schedule.end_time}`);
-    });
-  }
 
 
   // Form getters
