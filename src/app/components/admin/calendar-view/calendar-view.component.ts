@@ -746,7 +746,7 @@ export class CalendarViewComponent implements OnInit, OnDestroy {
   searchClients(query: string): void {
     this.adminService.searchExternalClients(query).subscribe({
       next: (response) => {
-        this.clientSuggestions = response.clients;
+        this.clientSuggestions = (response?.clients) || [];
         // Solo mostrar si el input tiene foco
         this.showSuggestions = this.nameInputHasFocus && this.clientSuggestions.length > 0;
       },
@@ -761,7 +761,7 @@ export class CalendarViewComponent implements OnInit, OnDestroy {
   loadFrequentClients(): void {
     this.adminService.getFrequentExternalClients(5).subscribe({
       next: (response) => {
-        this.frequentClients = response.clients;
+        this.frequentClients = (response?.clients) || [];
       },
       error: (error) => {
         console.error('Error loading frequent clients:', error);

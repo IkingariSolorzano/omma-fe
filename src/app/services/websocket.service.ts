@@ -38,11 +38,13 @@ export class WebsocketService {
     }
 
     this.isConnecting = true;
-    const wsUrl = environment.apiUrl.replace('http', 'ws').replace('https', 'wss');
-    // Add token as query parameter since WebSocket doesn't support custom headers
-    const url = `${wsUrl}/ws?token=${token}`;
+    
+    // Determine WebSocket protocol based on current page protocol
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const apiUrl = environment.apiUrl.replace(/^https?:/, '').replace(/^\/\//, '');
+    const url = `${protocol}//${apiUrl}/ws?token=${token}`;
 
-    console.log('🔌 WebSocket: Conectando...');
+    console.log('🔌 WebSocket: Conectando a', url.replace(token, '***'));
 
     try {
       this.socket = new WebSocket(url);

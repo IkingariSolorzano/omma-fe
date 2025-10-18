@@ -8,69 +8,46 @@
       </h1>
       <div class="w-24 h-1 bg-blue-600 mx-auto mb-6"></div>
       <p class="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-        Ofrecemos opciones flexibles de renta por hora o paquetes mensuales adaptados a tus necesidades.
+        Renta por hora con tarifas accesibles y políticas de cancelación flexibles.
       </p>
     </div>
 
     <!-- Hourly Rates -->
     <div class="mb-16">
       <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Tarifas por Hora</h2>
-      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Weekday Morning -->
-        <div class="bg-white rounded-lg shadow-lg p-6 text-center">
+      <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <!-- Regular Rate -->
+        <div class="bg-white rounded-lg shadow-lg p-8 text-center">
           <div class="flex items-center justify-center mb-4">
-            <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-16 h-16 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
             </svg>
           </div>
-          <h3 class="text-xl font-semibold text-gray-800 mb-2">Lunes - Viernes</h3>
-          <p class="text-gray-600 mb-2">09:00 - 15:00 hrs</p>
-          <div class="text-3xl font-bold text-green-600 mb-4">$60 MXN</div>
-          <p class="text-sm text-gray-500">por hora</p>
+          <h3 class="text-2xl font-semibold text-gray-800 mb-2">Horario Regular</h3>
+          <p class="text-gray-600 mb-4">Lunes - Sábado</p>
+          <div class="text-5xl font-bold text-blue-600 mb-4">$90</div>
+          <p class="text-lg text-gray-500 mb-2">MXN por hora</p>
+          <p class="text-sm text-gray-500">Tarifa estándar</p>
         </div>
 
-        <!-- Weekday Afternoon -->
-        <div class="bg-white rounded-lg shadow-lg p-6 text-center">
+        <!-- Special Rate (Sundays/Holidays) -->
+        <div class="bg-gradient-to-br from-red-500 to-orange-500 rounded-lg shadow-lg p-8 text-center text-white">
           <div class="flex items-center justify-center mb-4">
-            <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
             </svg>
           </div>
-          <h3 class="text-xl font-semibold text-gray-800 mb-2">Lunes - Viernes</h3>
-          <p class="text-gray-600 mb-2">15:00 - 20:00 hrs</p>
-          <div class="text-3xl font-bold text-blue-600 mb-4">$80 MXN</div>
-          <p class="text-sm text-gray-500">por hora</p>
-        </div>
-
-        <!-- Saturday -->
-        <div class="bg-white rounded-lg shadow-lg p-6 text-center">
-          <div class="flex items-center justify-center mb-4">
-            <svg class="w-12 h-12 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold text-gray-800 mb-2">Sábado</h3>
-          <p class="text-gray-600 mb-2">10:00 - 20:00 hrs</p>
-          <div class="text-3xl font-bold text-purple-600 mb-4">$80 MXN</div>
-          <p class="text-sm text-gray-500">por hora</p>
-        </div>
-
-        <!-- Sunday/Holidays -->
-        <div class="bg-white rounded-lg shadow-lg p-6 text-center">
-          <div class="flex items-center justify-center mb-4">
-            <svg class="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold text-gray-800 mb-2">Domingo/Festivos</h3>
-          <p class="text-gray-600 mb-2">Sujeto a disponibilidad</p>
-          <div class="text-3xl font-bold text-red-600 mb-4">$90 MXN</div>
-          <p class="text-sm text-gray-500">por hora</p>
+          <h3 class="text-2xl font-semibold mb-2">Horario Especial</h3>
+          <p class="mb-4 opacity-90">Domingos y Días Festivos</p>
+          <div class="text-5xl font-bold mb-4">$100</div>
+          <p class="text-lg opacity-90 mb-2">MXN por hora</p>
+          <p class="text-sm opacity-90">Sujeto a disponibilidad</p>
         </div>
       </div>
     </div>
 
-    <!-- Monthly Packages -->
+    <!-- Monthly Packages - COMMENTED OUT FOR FUTURE USE -->
+    <!-- 
     <div class="mb-16">
       <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Paquetes Mensuales</h2>
       <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">
@@ -78,7 +55,6 @@
       </p>
 
       <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- 15 Hours -->
         <div class="bg-white rounded-lg shadow-lg p-6 text-center relative">
           <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
             <span class="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">Más Popular</span>
@@ -93,7 +69,6 @@
           </ul>
         </div>
 
-        <!-- 20 Hours -->
         <div class="bg-white rounded-lg shadow-lg p-6 text-center">
           <h3 class="text-2xl font-bold text-gray-800 mb-2">20 Horas</h3>
           <div class="text-4xl font-bold text-blue-600 mb-4">$1,300 MXN</div>
@@ -105,7 +80,6 @@
           </ul>
         </div>
 
-        <!-- 30 Hours -->
         <div class="bg-white rounded-lg shadow-lg p-6 text-center">
           <h3 class="text-2xl font-bold text-gray-800 mb-2">30 Horas</h3>
           <div class="text-4xl font-bold text-purple-600 mb-4">$1,600 MXN</div>
@@ -117,7 +91,6 @@
           </ul>
         </div>
 
-        <!-- 40 Hours -->
         <div class="bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg shadow-lg p-6 text-center text-white">
           <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
             <span class="bg-yellow-400 text-gray-800 px-3 py-1 rounded-full text-sm font-semibold">Sin Penalización</span>
@@ -133,44 +106,59 @@
         </div>
       </div>
     </div>
+    -->
 
     <!-- Policies Section -->
     <div class="bg-white rounded-lg shadow-lg p-8 md:p-12">
-      <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Políticas Importantes</h2>
+      <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Políticas de Cancelación</h2>
 
-      <div class="grid md:grid-cols-2 gap-8">
-        <!-- Extra Time Policy -->
-        <div class="flex items-start">
-          <div class="flex-shrink-0">
-            <svg class="w-8 h-8 text-orange-600 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-          </div>
-          <div class="ml-4">
-            <h3 class="text-xl font-semibold text-gray-800 mb-2">Tiempo Extra</h3>
-            <ul class="text-gray-600 space-y-1">
-              <li>• 5 minutos de tolerancia sin cargo</li>
-              <li>• $35 MXN por cada 15 minutos adicionales</li>
-              <li>• Cargo completo por hora si excede</li>
-            </ul>
+      <div class="max-w-3xl mx-auto">
+        <div class="bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-6 mb-6">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <svg class="w-10 h-10 text-green-600 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-xl font-semibold text-gray-800 mb-2">Cancelación con 24 horas o más de anticipación</h3>
+              <p class="text-gray-700 text-lg"><span class="font-bold text-green-600">Sin costo</span> - Reembolso completo</p>
+            </div>
           </div>
         </div>
 
-        <!-- Cancellation Policy -->
-        <div class="flex items-start">
-          <div class="flex-shrink-0">
-            <svg class="w-8 h-8 text-red-600 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
+        <div class="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-6 mb-6">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <svg class="w-10 h-10 text-orange-600 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-xl font-semibold text-gray-800 mb-2">Cancelación dentro de las 24 horas</h3>
+              <p class="text-gray-700 text-lg">Cargo de <span class="font-bold text-orange-600">$40 MXN</span></p>
+            </div>
           </div>
-          <div class="ml-4">
-            <h3 class="text-xl font-semibold text-gray-800 mb-2">Cancelaciones</h3>
-            <ul class="text-gray-600 space-y-1">
-              <li>• Sin cargo con 24 hrs de anticipación</li>
-              <li>• $35-$80 MXN con menos de 24 hrs</li>
-              <li>• Cargo según tiempo reservado</li>
-            </ul>
+        </div>
+
+        <div class="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-6">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <svg class="w-10 h-10 text-red-600 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-xl font-semibold text-gray-800 mb-2">Cancelación con 10 minutos o menos de anticipación</h3>
+              <p class="text-gray-700 text-lg"><span class="font-bold text-red-600">Sin reembolso</span> - Se cobra la hora completa</p>
+            </div>
           </div>
+        </div>
+
+        <div class="mt-8 p-4 bg-blue-50 border-l-4 border-blue-600 rounded">
+          <p class="text-gray-700">
+            <span class="font-semibold text-blue-800">Nota:</span> Las políticas de cancelación aplican para garantizar la disponibilidad y el servicio de calidad para todos nuestros usuarios.
+          </p>
         </div>
       </div>
     </div>

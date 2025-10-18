@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://ikingarisolorzano.com/api/v1'
+  apiUrl: 'https://ommaconsultorios.com/api/v1'
 };
