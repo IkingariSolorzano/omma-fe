@@ -155,15 +155,22 @@ export class SpaceBookingComponent implements OnInit {
       myReservations: this.professionalService.getMyReservations()
     }).subscribe({
       next: (data) => {
+        // Asignar todos los datos primero
         this.spaces = data.spaces;
         this.credits = data.credits;
         this.businessHours = data.businessHours;
         this.closedDates = data.closedDates;
         this.spaceSchedules = this.normalizeSchedules(data.schedules);
-        this.calendarSlots = data.calendarSlots;
+        
+        // CRÍTICO: Asegurar que calendarSlots se asigne correctamente antes de generar el calendario
+        this.calendarSlots = Array.isArray(data.calendarSlots) ? data.calendarSlots : [];
         this.myReservations = data.myReservations;
 
-        this.existingReservations = (data.calendarSlots || []).map((s: any) => ({
+        // Log para debugging
+        console.log('[SPACE-BOOKING] Calendar slots loaded:', this.calendarSlots.length);
+        console.log('[SPACE-BOOKING] My reservations loaded:', this.myReservations.length);
+
+        this.existingReservations = (this.calendarSlots || []).map((s: any) => ({
           id: s.id,
           space_id: s.space_id,
           start_time: s.start_time,
@@ -171,6 +178,7 @@ export class SpaceBookingComponent implements OnInit {
           status: s.status
         }));
 
+        // Generar el calendario solo después de que todos los datos estén asignados
         this.generateCalendar();
         this.loading = false;
       },
@@ -221,7 +229,8 @@ export class SpaceBookingComponent implements OnInit {
     
     this.calendarDays = [];
     
-    // Debug: Log business hours data
+    console.log('[SPACE-BOOKING] Generating calendar for:', this.currentDate.toDateString());
+    console.log('[SPACE-BOOKING] Calendar slots available:', this.calendarSlots?.length || 0);
     
     for (let i = 0; i < 42; i++) {
       const date = new Date(startDate);
@@ -231,7 +240,6 @@ export class SpaceBookingComponent implements OnInit {
       const businessHour = this.businessHours.find(bh => bh.day_of_week === dayOfWeek);
       const isClosedDate = this.closedDates.some(cd => cd.date === this.toISODateString(date) && cd.is_active);
       
-      // Debug: Log each day's evaluation
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const isAfterToday = date >= today;
@@ -254,6 +262,8 @@ export class SpaceBookingComponent implements OnInit {
         slots: slotsForDay
       });
     }
+    
+    console.log('[SPACE-BOOKING] Calendar generated with', this.calendarDays.length, 'days');
   }
 
   selectDate(day: CalendarDay): void {
@@ -284,6 +294,9 @@ export class SpaceBookingComponent implements OnInit {
 
   generateDayView(): void {
     if (!this.selectedDate) return;
+    
+    console.log('[SPACE-BOOKING] Generating day view for:', this.selectedDate.toDateString());
+    console.log('[SPACE-BOOKING] Available calendar slots:', this.calendarSlots?.length || 0);
     
     const dayOfWeek = this.selectedDate.getDay();
     const businessHour = this.businessHours.find(bh => bh.day_of_week === dayOfWeek);
@@ -372,11 +385,17 @@ export class SpaceBookingComponent implements OnInit {
       return false; // The hour is in the past for today
     }
     
+    // Verificar que calendarSlots esté cargado
+    if (!this.calendarSlots || !Array.isArray(this.calendarSlots)) {
+      console.warn('[SPACE-BOOKING] calendarSlots not loaded yet');
+      return false; // Si no hay datos, marcar como no disponible por seguridad
+    }
+    
     // Check if there's an existing reservation (any user) for this space, date, and hour using calendarSlots
     const reservationDateTime = new Date(this.selectedDate);
     reservationDateTime.setHours(hour, 0, 0, 0);
     
-    const hasExistingReservation = (this.calendarSlots || []).some((slot: CalendarSlot) => {
+    const hasExistingReservation = this.calendarSlots.some((slot: CalendarSlot) => {
       if (slot.space_id !== space.id) return false;
       if (['cancelled'].includes(slot.status)) return false;
       const slotStart = new Date(slot.start_time);
@@ -386,8 +405,6 @@ export class SpaceBookingComponent implements OnInit {
       requestedEnd.setHours(hour + 1);
       return (requestedStart < slotEnd && requestedEnd > slotStart);
     });
-    
-    // console.log(`Space ${space.id} at ${hour}:00 on ${this.selectedDate.toDateString()}: ${hasExistingReservation ? 'OCCUPIED' : 'AVAILABLE'}`);
     
     return !hasExistingReservation;
   }
@@ -687,8 +704,12 @@ export class SpaceBookingComponent implements OnInit {
 
   // Aggregate calendar slots for a given date (used for month-day previews)
   private getSlotsForDate(date: Date): CalendarSlot[] {
+    if (!this.calendarSlots || !Array.isArray(this.calendarSlots)) {
+      return [];
+    }
+    
     const dateStr = this.toISODateString(date);
-    return (this.calendarSlots || []).filter((slot: CalendarSlot) => {
+    return this.calendarSlots.filter((slot: CalendarSlot) => {
       const slotDate = new Date(slot.start_time);
       const slotStr = this.toISODateString(slotDate);
       return slotStr === dateStr;
