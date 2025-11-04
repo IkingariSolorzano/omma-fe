@@ -519,6 +519,12 @@ export class SpaceBookingComponent implements OnInit {
   confirmSpecialRequest(): void {
     if (!this.selectedDate || this.selectedSlots.length === 0) return;
 
+    // Validar que la fecha seleccionada esté en un rango válido
+    if (!this.isValidDate(this.selectedDate)) {
+      this.error = 'La fecha seleccionada no es válida. Por favor, selecciona una fecha entre 1900 y 2100.';
+      return;
+    }
+
     this.loading = true;
     this.error = '';
     this.success = '';
@@ -529,6 +535,10 @@ export class SpaceBookingComponent implements OnInit {
       const endTime = new Date(this.selectedDate!);
       endTime.setHours(slot.hourSlot.hour + 1, 0, 0, 0);
       
+      // Validar que las horas calculadas estén en rango válido
+      if (!this.isValidDate(startTime) || !this.isValidDate(endTime)) {
+        throw new Error('Fechas calculadas inválidas');
+      }
       // Format as local time instead of UTC to preserve timezone
       const formatLocalDateTime = (date: Date): string => {
         const year = date.getFullYear();
@@ -664,6 +674,11 @@ export class SpaceBookingComponent implements OnInit {
     return date1.getFullYear() === date2.getFullYear() &&
            date1.getMonth() === date2.getMonth() &&
            date1.getDate() === date2.getDate();
+  }
+
+  isValidDate(date: Date): boolean {
+    const year = date.getFullYear();
+    return year >= 1900 && year <= 2100 && !isNaN(date.getTime());
   }
 
   getMonthName(): string {

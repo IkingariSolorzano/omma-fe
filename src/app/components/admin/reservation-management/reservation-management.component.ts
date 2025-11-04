@@ -327,9 +327,16 @@ export class ReservationManagementComponent implements OnInit {
 
     const formData = this.editForm.value;
     
-    // Create proper Date objects and format them as ISO strings
+    // Create proper Date objects and validate them
     const startDate = new Date(`${formData.date}T${formData.start_time}:00`);
     const endDate = new Date(`${formData.date}T${formData.end_time}:00`);
+    
+    // Validar que las fechas sean válidas
+    if (!this.isValidDate(startDate) || !this.isValidDate(endDate)) {
+      this.error = 'Las fechas seleccionadas no son válidas. Verifica el formato.';
+      this.setAutoClearMessages();
+      return;
+    }
     
     const updateData: UpdateReservationRequest = {
       space_id: parseInt(formData.space_id),
@@ -544,6 +551,11 @@ export class ReservationManagementComponent implements OnInit {
     return date1.getFullYear() === date2.getFullYear() &&
            date1.getMonth() === date2.getMonth() &&
            date1.getDate() === date2.getDate();
+  }
+
+  isValidDate(date: Date): boolean {
+    const year = date.getFullYear();
+    return year >= 1900 && year <= 2100 && !isNaN(date.getTime());
   }
 
   formatDisplayDate(date: Date): string {
