@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { AdminService, AddCreditsRequest } from '../../../services/admin.service';
+import { AdminService, AddCreditsRequest, ExtendExpiryRequest } from '../../../services/admin.service';
 import { User } from '../../../services/auth.service';
 
 @Component({
@@ -14,6 +14,7 @@ import { User } from '../../../services/auth.service';
 export class CreditsManagementComponent implements OnInit {
   users: User[] = [];
   creditsForm: FormGroup;
+  extendForm: FormGroup;
   loading = false;
   error = '';
   success = '';
@@ -25,6 +26,11 @@ export class CreditsManagementComponent implements OnInit {
     this.creditsForm = this.fb.group({
       user_id: ['', [Validators.required]],
       amount: ['', [Validators.required, Validators.min(1)]]
+    });
+
+    this.extendForm = this.fb.group({
+      user_id: ['', [Validators.required]],
+      days: ['', [Validators.required, Validators.min(1), Validators.max(365)]]
     });
   }
 
@@ -71,10 +77,40 @@ export class CreditsManagementComponent implements OnInit {
     }
   }
 
+  onExtendSubmit(): void {
+    if (this.extendForm.valid) {
+      this.loading = true;
+      this.error = '';
+      this.success = '';
+
+      const extendData: ExtendExpiryRequest = {
+        user_id: parseInt(this.extendForm.value.user_id),
+        days: parseInt(this.extendForm.value.days)
+      };
+
+      this.adminService.extendCreditExpiry(extendData).subscribe({
+        next: () => {
+          this.loading = false;
+          this.success = 'Vigencia de créditos extendida exitosamente';
+          this.extendForm.reset();
+          this.loadUsers(); // Refresh to show updated credits
+        },
+        error: (error) => {
+          this.loading = false;
+          this.error = error?.error?.error || 'Error al extender vigencia';
+          console.error('Error extending expiry:', error);
+        }
+      });
+    }
+  }
+
   getSelectedUser(): User | undefined {
     const userId = this.creditsForm.get('user_id')?.value;
     return this.users.find(user => user.id === parseInt(userId));
   }
+
+  get extend_user_id() { return this.extendForm.get('user_id'); }
+  get days() { return this.extendForm.get('days'); }
 
   get user_id() { return this.creditsForm.get('user_id'); }
   get amount() { return this.creditsForm.get('amount'); }

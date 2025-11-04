@@ -80,11 +80,11 @@ export class UserManagementComponent implements OnInit {
     });
     this.extendExpiryForm = this.fb.group({
       credit_id: ['', [Validators.required]],
-      days: [30, [Validators.required, Validators.min(1)]]
+      days: [30, [Validators.required, Validators.min(1), Validators.max(365)]]
     });
     this.reactivateForm = this.fb.group({
       credit_id: ['', [Validators.required]],
-      new_expiry: ['', [Validators.required]] // YYYY-MM-DD
+      new_expiry: ['', [Validators.required, this.futureDateValidator]]
     });
     this.transferForm = this.fb.group({
       credit_id: ['', [Validators.required]],
@@ -465,6 +465,28 @@ export class UserManagementComponent implements OnInit {
       return null; // other validators handle required
     }
     return newPass === confirm ? null : { mismatch: true };
+  };
+
+  // Validator to ensure expiry date is in the future and within reasonable range
+  private futureDateValidator = (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) return null;
+    
+    const selectedDate = new Date(control.value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (selectedDate <= today) {
+      return { pastDate: true };
+    }
+    
+    const maxDate = new Date();
+    maxDate.setFullYear(maxDate.getFullYear() + 2); // Max 2 years in future
+    
+    if (selectedDate > maxDate) {
+      return { tooFarFuture: true };
+    }
+    
+    return null;
   };
 
   private setupPaymentFormListener(): void {

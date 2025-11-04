@@ -16,7 +16,7 @@
       {{ error }}
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Add Credits Form -->
       <div class="bg-white shadow rounded-lg">
         <div class="px-4 py-5 sm:p-6">
@@ -71,6 +71,67 @@
               [disabled]="creditsForm.invalid || loading"
               class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50">
               {{ loading ? 'Agregando...' : 'Agregar Créditos' }}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Extend Expiry Form -->
+      <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+          <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Extender Vigencia de Créditos</h3>
+          
+          <form [formGroup]="extendForm" (ngSubmit)="onExtendSubmit()" class="space-y-4">
+            <div>
+              <label for="extend_user_id" class="block text-sm font-medium text-gray-700">Seleccionar Profesional</label>
+              <select 
+                id="extend_user_id" 
+                formControlName="user_id"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                [class.border-red-500]="extend_user_id?.invalid && extend_user_id?.touched">
+                <option value="">Selecciona un profesional</option>
+                <option *ngFor="let user of users" [value]="user.id">
+                  {{ user.name }} - {{ user.specialty }}
+                </option>
+              </select>
+              <div *ngIf="extend_user_id?.invalid && extend_user_id?.touched" class="text-red-600 text-sm mt-1">
+                Selecciona un profesional
+              </div>
+            </div>
+
+            <div>
+              <label for="days" class="block text-sm font-medium text-gray-700">Días a Extender</label>
+              <input 
+                type="number" 
+                id="days" 
+                formControlName="days"
+                min="1"
+                max="365"
+                step="1"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                [class.border-red-500]="days?.invalid && days?.touched">
+              <div *ngIf="days?.invalid && days?.touched" class="text-red-600 text-sm mt-1">
+                <div *ngIf="days?.errors?.['required']">Los días son requeridos</div>
+                <div *ngIf="days?.errors?.['min']">Mínimo 1 día</div>
+                <div *ngIf="days?.errors?.['max']">Máximo 365 días</div>
+              </div>
+              <p class="mt-1 text-sm text-gray-500">
+                Nota: Máximo 365 días (1 año) por extensión
+              </p>
+            </div>
+
+            <!-- Selected User Info for Extend -->
+            <div *ngIf="getSelectedUser()" class="bg-blue-50 p-4 rounded-md">
+              <h4 class="text-sm font-medium text-blue-900">Usuario Seleccionado:</h4>
+              <p class="text-sm text-blue-700">{{ getSelectedUser()?.name }}</p>
+              <p class="text-sm text-blue-600">Créditos actuales: {{ getSelectedUser()?.active_credits || 0 }}</p>
+            </div>
+
+            <button 
+              type="submit" 
+              [disabled]="extendForm.invalid || loading"
+              class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50">
+              {{ loading ? 'Extendiendo...' : 'Extender Vigencia' }}
             </button>
           </form>
         </div>
