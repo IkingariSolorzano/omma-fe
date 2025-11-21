@@ -23,6 +23,7 @@ interface TimeSlot {
   timeLabel: string;
   isAvailable: boolean;
   isSelected?: boolean;
+  conflictReason?: string;
 }
 
 @Component({
@@ -42,6 +43,7 @@ export class ReservationManagementComponent implements OnInit {
   pendingLoading = false;
   error = '';
   success = '';
+  editError = '';
   showCancelModal = false;
   showEditModal = false;
   selectedReservation: Reservation | null = null;
@@ -51,10 +53,13 @@ export class ReservationManagementComponent implements OnInit {
   // Edit modal specific data
   availableSpaces: Space[] = [];
   availableTimeSlots: TimeSlot[] = [];
+  currentSpaceReservations: Reservation[] = [];
   businessHours: BusinessHour[] = [];
   spaceSchedules: any[] = [];
   selectedEditDate: string = '';
   selectedEditSpaceId: number | null = null;
+  availabilityLoading = false;
+  availabilityError = '';
 
   // Filtros
   filterForm: FormGroup;
@@ -279,6 +284,8 @@ export class ReservationManagementComponent implements OnInit {
 
   openEditModal(reservation: Reservation): void {
     this.selectedReservation = reservation;
+    this.editError = '';
+    this.availabilityError = '';
     
     // Format the date for the date input (YYYY-MM-DD)
     const startDate = new Date(reservation.start_time);
@@ -318,15 +325,24 @@ export class ReservationManagementComponent implements OnInit {
     this.editForm.reset();
     this.availableSpaces = [];
     this.availableTimeSlots = [];
+    this.currentSpaceReservations = [];
     this.selectedEditDate = '';
     this.selectedEditSpaceId = null;
+    this.editError = '';
+    this.availabilityError = '';
   }
 
   updateReservation(): void {
     if (!this.selectedReservation || this.editForm.invalid) return;
 
     const formData = this.editForm.value;
+    this.editError = '';
     
+    if (!formData.start_time || !formData.end_time) {
+      this.editError = 'Selecciona un horario válido.';
+      return;
+    }
+
     // Create proper Date objects and validate them
     const startDate = new Date(`${formData.date}T${formData.start_time}:00`);
     const endDate = new Date(`${formData.date}T${formData.end_time}:00`);
@@ -335,6 +351,11 @@ export class ReservationManagementComponent implements OnInit {
     if (!this.isValidDate(startDate) || !this.isValidDate(endDate)) {
       this.error = 'Las fechas seleccionadas no son válidas. Verifica el formato.';
       this.setAutoClearMessages();
+      return;
+    }
+
+    if (!this.isRangeAvailable(startDate, endDate)) {
+      this.editError = 'Ya existe una reservación en ese horario para el consultorio seleccionado.';
       return;
     }
     
@@ -354,7 +375,9 @@ export class ReservationManagementComponent implements OnInit {
         this.setAutoClearMessages();
       },
       error: (error) => {
-        this.error = error?.error?.error || 'Error al actualizar reservación';
+        const backendError = error?.error?.error || 'Error al actualizar reservación';
+        this.error = backendError;
+        this.editError = backendError;
         console.error('Error updating reservation:', error);
         console.error('Request data sent:', updateData);
         console.error('Full error response:', error?.error);
@@ -465,6 +488,9 @@ export class ReservationManagementComponent implements OnInit {
     this.selectedEditDate = date;
     this.selectedEditSpaceId = null;
     this.availableTimeSlots = [];
+    this.currentSpaceReservations = [];
+    this.editError = '';
+    this.availabilityError = '';
     this.editForm.patchValue({ space_id: '', start_time: '', end_time: '' });
     this.loadAvailableSpacesForDate(date);
   }
@@ -472,6 +498,9 @@ export class ReservationManagementComponent implements OnInit {
   onEditSpaceChange(spaceId: number): void {
     this.selectedEditSpaceId = spaceId;
     this.availableTimeSlots = [];
+    this.currentSpaceReservations = [];
+    this.editError = '';
+    this.availabilityError = '';
     this.editForm.patchValue({ start_time: '', end_time: '' });
     
     if (this.selectedEditDate && spaceId) {
@@ -482,6 +511,8 @@ export class ReservationManagementComponent implements OnInit {
   loadAvailableTimeSlotsForSpace(spaceId: number, date: string): void {
     if (!spaceId || !date) {
       this.availableTimeSlots = [];
+      this.currentSpaceReservations = [];
+      this.availabilityError = '';
       return;
     }
 
@@ -498,37 +529,124 @@ export class ReservationManagementComponent implements OnInit {
       return;
     }
 
-    const businessStartHour = parseInt(businessHour.start_time.split(':')[0]);
-    const businessEndHour = parseInt(businessHour.end_time.split(':')[0]);
-    
-    this.availableTimeSlots = [];
-    
-    // Generate time slots for business hours
-    for (let hour = businessStartHour; hour < businessEndHour; hour++) {
-      const timeSlot: TimeSlot = {
-        hour: hour,
-        timeLabel: `${hour.toString().padStart(2, '0')}:00 - ${(hour + 1).toString().padStart(2, '0')}:00`,
-        isAvailable: this.isTimeSlotAvailable(spaceId, date, hour)
-      };
-      
-      this.availableTimeSlots.push(timeSlot);
-    }
+    this.availabilityLoading = true;
+    this.availabilityError = '';
+    this.currentSpaceReservations = [];
+
+    this.adminService.getAllReservations({
+      startDate: date,
+      endDate: date,
+      space_id: spaceId
+    }).subscribe({
+      next: (reservations) => {
+        this.currentSpaceReservations = reservations || [];
+        this.generateTimeSlotsForDay(spaceId, date, businessHour);
+        this.availabilityLoading = false;
+      },
+      error: (error) => {
+        this.availabilityError = error?.error?.error || 'No se pudieron obtener los horarios para este consultorio.';
+        this.availabilityLoading = false;
+        this.availableTimeSlots = [];
+        this.currentSpaceReservations = [];
+      }
+    });
   }
 
-  isTimeSlotAvailable(spaceId: number, date: string, hour: number): boolean {
-    // Check if this time slot conflicts with existing reservations
-    // For now, we'll assume all slots are available
-    // In a real implementation, you'd check against existing reservations
-    
+  private generateTimeSlotsForDay(spaceId: number, date: string, businessHour: BusinessHour): void {
+    const businessStartHour = parseInt(businessHour.start_time.split(':')[0], 10);
+    const businessEndHour = parseInt(businessHour.end_time.split(':')[0], 10);
+    const selectedHour = this.getSelectedStartHour();
+
+    const slots: TimeSlot[] = [];
+
+    for (let hour = businessStartHour; hour < businessEndHour; hour++) {
+      const { isAvailable, conflictReason } = this.evaluateTimeSlotAvailability(date, hour);
+      const timeSlot: TimeSlot = {
+        hour,
+        timeLabel: `${hour.toString().padStart(2, '0')}:00 - ${(hour + 1).toString().padStart(2, '0')}:00`,
+        isAvailable,
+        isSelected: selectedHour === hour && isAvailable,
+        conflictReason
+      };
+
+      slots.push(timeSlot);
+    }
+
+    this.availableTimeSlots = slots;
+  }
+
+  private getSelectedStartHour(): number | null {
+    const currentStartTime = this.editForm.get('start_time')?.value;
+    if (!currentStartTime) {
+      return null;
+    }
+
+    const [hourString] = currentStartTime.split(':');
+    const parsedHour = parseInt(hourString, 10);
+    return isNaN(parsedHour) ? null : parsedHour;
+  }
+
+  private evaluateTimeSlotAvailability(date: string, hour: number): { isAvailable: boolean; conflictReason?: string } {
     const selectedDate = new Date(date);
     const now = new Date();
-    
-    // Don't allow past time slots for today
+
     if (this.isSameDay(selectedDate, now) && hour <= now.getHours()) {
-      return false;
+      return { isAvailable: false, conflictReason: 'No disponible en horas pasadas.' };
     }
-    
-    return true;
+
+    const slotStart = new Date(`${date}T${hour.toString().padStart(2, '0')}:00:00`);
+    const slotEnd = new Date(slotStart);
+    slotEnd.setHours(slotEnd.getHours() + 1);
+
+    const conflictingReservation = this.currentSpaceReservations.find(reservation => {
+      if (!this.isReservationActive(reservation)) {
+        return false;
+      }
+
+      if (this.selectedReservation && reservation.id === this.selectedReservation.id) {
+        return false;
+      }
+
+      const reservationStart = new Date(reservation.start_time);
+      const reservationEnd = new Date(reservation.end_time);
+      return slotStart < reservationEnd && slotEnd > reservationStart;
+    });
+
+    if (conflictingReservation) {
+      const statusLabel = conflictingReservation.status === 'pending' ? 'pendiente' : 'confirmada';
+      const startLabel = new Date(conflictingReservation.start_time).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+      const endLabel = new Date(conflictingReservation.end_time).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+      return {
+        isAvailable: false,
+        conflictReason: `Ya existe una reservación ${statusLabel} (${startLabel} - ${endLabel}).`
+      };
+    }
+
+    return { isAvailable: true };
+  }
+
+  private isReservationActive(reservation: Reservation): boolean {
+    return reservation.status !== 'cancelled';
+  }
+
+  private isRangeAvailable(startDate: Date, endDate: Date): boolean {
+    if (!this.currentSpaceReservations.length) {
+      return true;
+    }
+
+    return !this.currentSpaceReservations.some(reservation => {
+      if (!this.isReservationActive(reservation)) {
+        return false;
+      }
+
+      if (this.selectedReservation && reservation.id === this.selectedReservation.id) {
+        return false;
+      }
+
+      const reservationStart = new Date(reservation.start_time);
+      const reservationEnd = new Date(reservation.end_time);
+      return startDate < reservationEnd && endDate > reservationStart;
+    });
   }
 
   selectTimeSlot(timeSlot: TimeSlot): void {
@@ -541,6 +659,7 @@ export class ReservationManagementComponent implements OnInit {
       start_time: startTime,
       end_time: endTime
     });
+    this.editError = '';
     
     // Update selection state
     this.availableTimeSlots.forEach(slot => slot.isSelected = false);

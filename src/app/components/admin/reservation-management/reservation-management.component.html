@@ -8,13 +8,17 @@
 
   <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
     <!-- Success/Error Messages -->
-    <div *ngIf="success" class="mb-4 bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md">
-      {{ success }}
-    </div>
+    @if (success) {
+      <div class="mb-4 bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md">
+        {{ success }}
+      </div>
+    }
     
-    <div *ngIf="error" class="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
-      {{ error }}
-    </div>
+    @if (error) {
+      <div class="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+        {{ error }}
+      </div>
+    }
 
     <!-- Two-panel layout -->
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -30,47 +34,58 @@
               </span>
             </div>
             
-            <div *ngIf="pendingLoading" class="text-center py-4">
-              <svg class="animate-spin h-6 w-6 text-blue-600 mx-auto" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </div>
-
-            <div *ngIf="!pendingLoading && pendingReservations.length === 0" class="text-center py-4 text-gray-500">
-              <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-              <p class="mt-2 text-sm">No hay reservaciones pendientes</p>
-            </div>
-
-            <div *ngIf="!pendingLoading && pendingReservations.length > 0" class="space-y-3 max-h-96 overflow-y-auto">
-              <div *ngFor="let reservation of pendingReservations" 
-                   class="border border-yellow-200 rounded-lg p-3 bg-yellow-50 hover:bg-yellow-100 transition-colors">
-                <div class="flex items-start justify-between mb-2">
-                  <div class="flex-1">
-                    <h4 class="text-sm font-medium text-gray-900">{{ reservation.space?.name }}</h4>
-                    <p class="text-xs text-gray-600 mt-1">
-                      {{ reservation.start_time | date:'MMM d, HH:mm' }}
-                    </p>
-                    <p class="text-xs text-gray-700 mt-1">
-                      <span *ngIf="reservation.user">{{ reservation.user.name }} {{ reservation.user.lastName }}</span>
-                      <span *ngIf="reservation.external_client">{{ reservation.external_client.name }}</span>
-                    </p>
-                  </div>
-                </div>
-                <div class="flex space-x-2">
-                  <button (click)="approveReservation(reservation.id)"
-                          class="flex-1 bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium transition-colors">
-                    Aprobar
-                  </button>
-                  <button (click)="openCancelModal(reservation)"
-                          class="flex-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium transition-colors">
-                    Rechazar
-                  </button>
-                </div>
+            @if (pendingLoading) {
+              <div class="text-center py-4">
+                <svg class="animate-spin h-6 w-6 text-blue-600 mx-auto" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
               </div>
-            </div>
+            }
+
+            @if (!pendingLoading && pendingReservations.length === 0) {
+              <div class="text-center py-4 text-gray-500">
+                <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p class="mt-2 text-sm">No hay reservaciones pendientes</p>
+              </div>
+            }
+
+            @if (!pendingLoading && pendingReservations.length > 0) {
+              <div class="space-y-3 max-h-96 overflow-y-auto">
+                @for (reservation of pendingReservations; track reservation.id) {
+                  <div class="border border-yellow-200 rounded-lg p-3 bg-yellow-50 hover:bg-yellow-100 transition-colors">
+                    <div class="flex items-start justify-between mb-2">
+                      <div class="flex-1">
+                        <h4 class="text-sm font-medium text-gray-900">{{ reservation.space?.name }}</h4>
+                        <p class="text-xs text-gray-600 mt-1">
+                          {{ reservation.start_time | date:'MMM d, HH:mm' }}
+                        </p>
+                        <p class="text-xs text-gray-700 mt-1">
+                          @if (reservation.user) {
+                            <span>{{ reservation.user.name }} {{ reservation.user.lastName }}</span>
+                          }
+                          @if (reservation.external_client) {
+                            <span>{{ reservation.external_client.name }}</span>
+                          }
+                        </p>
+                      </div>
+                    </div>
+                    <div class="flex space-x-2">
+                      <button (click)="approveReservation(reservation.id)"
+                              class="flex-1 bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium transition-colors">
+                        Aprobar
+                      </button>
+                      <button (click)="openCancelModal(reservation)"
+                              class="flex-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium transition-colors">
+                        Rechazar
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
           </div>
         </div>
       </div>
@@ -114,326 +129,404 @@
               </button>
             </div>
             
-            <div *ngIf="loading" class="text-center py-8">
-              <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </div>
+            @if (loading) {
+              <div class="text-center py-8">
+                <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+            }
 
-            <div *ngIf="!loading && reservations.length === 0" class="text-center py-8 text-gray-500">
-              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-              </svg>
-              <p class="mt-2">No se encontraron reservaciones con los filtros actuales.</p>
-            </div>
+            @if (!loading && reservations.length === 0) {
+              <div class="text-center py-8 text-gray-500">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                </svg>
+                <p class="mt-2">No se encontraron reservaciones con los filtros actuales.</p>
+              </div>
+            }
 
             <!-- Grouped Reservations by Day -->
-            <div *ngIf="!loading && groupedReservations.length > 0" class="space-y-4">
-              <div *ngFor="let dayGroup of groupedReservations" class="border border-gray-200 rounded-lg overflow-hidden">
-                <!-- Day Header -->
-                <div (click)="toggleDayExpansion(dayGroup)" 
-                     class="bg-gray-50 px-4 py-3 cursor-pointer hover:bg-gray-100 transition-colors">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                      <svg class="h-5 w-5 text-gray-500 transition-transform duration-200"
-                           [class.rotate-90]="dayGroup.expanded"
-                           fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                      </svg>
-                      <h3 class="text-lg font-semibold text-gray-900">{{ dayGroup.displayDate }}</h3>
-                    </div>
-                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
-                      {{ getTotalReservationsForDay(dayGroup) }} reservación{{ getTotalReservationsForDay(dayGroup) !== 1 ? 'es' : '' }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Day Content -->
-              <div *ngFor="let spaceGroup of dayGroup.spaces" class="border-b border-gray-100 last:border-b-0">
-                <!-- Space Header -->
-                <div (click)="toggleSpaceExpansion(spaceGroup)"
-                     class="bg-white px-6 py-3 cursor-pointer hover:bg-gray-50 transition-colors">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                      <svg class="h-4 w-4 text-gray-400 transition-transform duration-200"
-                           [class.rotate-90]="spaceGroup.expanded"
-                           fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                      </svg>
-                      <div class="flex items-center space-x-2">
-                        <svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                        </svg>
-                        <h4 class="text-md font-medium text-gray-800">{{ spaceGroup.spaceName }}</h4>
+            @if (!loading && groupedReservations.length > 0) {
+              <div class="space-y-4">
+                @for (dayGroup of groupedReservations; track dayGroup.date) {
+                  <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <!-- Day Header -->
+                    <div (click)="toggleDayExpansion(dayGroup)" 
+                         class="bg-gray-50 px-4 py-3 cursor-pointer hover:bg-gray-100 transition-colors">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                          <svg class="h-5 w-5 text-gray-500 transition-transform duration-200"
+                               [class.rotate-90]="dayGroup.expanded"
+                               fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                          </svg>
+                          <h3 class="text-lg font-semibold text-gray-900">{{ dayGroup.displayDate }}</h3>
+                        </div>
+                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
+                          {{ getTotalReservationsForDay(dayGroup) }} reservación{{ getTotalReservationsForDay(dayGroup) !== 1 ? 'es' : '' }}
+                        </span>
                       </div>
                     </div>
-                    <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-sm">
-                      {{ spaceGroup.reservations.length }} cita{{ spaceGroup.reservations.length !== 1 ? 's' : '' }}
-                    </span>
-                  </div>
-                </div>
 
-                <!-- Space Reservations -->
-                <div *ngIf="spaceGroup.expanded" class="bg-gray-50">
-                  <div *ngFor="let reservation of spaceGroup.reservations" 
-                       class="mx-6 mb-3 last:mb-0 bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div class="flex items-start justify-between">
-                      <div class="flex-1">
-                        <div class="flex items-center space-x-3 mb-2">
-                          <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
-                                [class]="getStatusBadgeClass(reservation.status)">
-                            {{ getStatusText(reservation.status) }}
-                          </span>
-                          <div class="flex items-center text-sm text-gray-600">
-                            <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            {{ reservation.start_time | date:'HH:mm' }} - {{ reservation.end_time | date:'HH:mm' }}
-                          </div>
-                        </div>
-                        
-                        <div class="space-y-1">
-                          <div class="flex items-center text-sm text-gray-700">
-                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
-                            <span *ngIf="reservation.user"><strong>Profesional:</strong> {{ reservation.user.name }} {{ reservation.user.lastName }}</span>
-                            <span *ngIf="reservation.external_client"><strong>Cliente Externo:</strong> {{ reservation.external_client.name }}</span>
-                          </div>
-                          
-                          <div *ngIf="reservation.notes" class="flex items-start text-sm text-gray-600">
-                            <svg class="h-4 w-4 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <span><strong>Notas:</strong> {{ reservation.notes }}</span>
-                          </div>
-
-                          <div *ngIf="reservation.status === 'pending' && reservation.requires_approval" class="mt-2">
-                            <div class="bg-yellow-50 p-2 rounded-md border border-yellow-200">
-                              <div class="text-xs text-yellow-800">
-                                <strong>Nota:</strong> Esta reservación está fuera del horario establecido y requiere aprobación manual.
+                    <!-- Day Content -->
+                    @for (spaceGroup of dayGroup.spaces; track spaceGroup.spaceId) {
+                      <div class="border-b border-gray-100 last:border-b-0">
+                        <!-- Space Header -->
+                        <div (click)="toggleSpaceExpansion(spaceGroup)"
+                             class="bg-white px-6 py-3 cursor-pointer hover:bg-gray-50 transition-colors">
+                          <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                              <svg class="h-4 w-4 text-gray-400 transition-transform duration-200"
+                                   [class.rotate-90]="spaceGroup.expanded"
+                                   fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                              </svg>
+                              <div class="flex items-center space-x-2">
+                                <svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                                <h4 class="text-md font-medium text-gray-800">{{ spaceGroup.spaceName }}</h4>
                               </div>
                             </div>
+                            <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-sm">
+                              {{ spaceGroup.reservations.length }} cita{{ spaceGroup.reservations.length !== 1 ? 's' : '' }}
+                            </span>
                           </div>
                         </div>
+
+                        <!-- Space Reservations -->
+                        @if (spaceGroup.expanded) {
+                          <div class="bg-gray-50">
+                            @for (reservation of spaceGroup.reservations; track reservation.id) {
+                              <div class="mx-6 mb-3 last:mb-0 bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <div class="flex items-start justify-between">
+                                  <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                      <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                                            [class]="getStatusBadgeClass(reservation.status)">
+                                        {{ getStatusText(reservation.status) }}
+                                      </span>
+                                      <div class="flex items-center text-sm text-gray-600">
+                                        <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        {{ reservation.start_time | date:'HH:mm' }} - {{ reservation.end_time | date:'HH:mm' }}
+                                      </div>
+                                    </div>
+
+                                    <div class="space-y-1">
+                                      <div class="flex items-center text-sm text-gray-700">
+                                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                        </svg>
+                                        @if (reservation.user) {
+                                          <span><strong>Profesional:</strong> {{ reservation.user.name }} {{ reservation.user.lastName }}</span>
+                                        }
+                                        @if (reservation.external_client) {
+                                          <span><strong>Cliente Externo:</strong> {{ reservation.external_client.name }}</span>
+                                        }
+                                      </div>
+
+                                      @if (reservation.notes) {
+                                        <div class="flex items-start text-sm text-gray-600">
+                                          <svg class="h-4 w-4 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                          </svg>
+                                          <span><strong>Notas:</strong> {{ reservation.notes }}</span>
+                                        </div>
+                                      }
+
+                                      @if (reservation.status === 'pending' && reservation.requires_approval) {
+                                        <div class="mt-2">
+                                          <div class="bg-yellow-50 p-2 rounded-md border border-yellow-200">
+                                            <div class="text-xs text-yellow-800">
+                                              <strong>Nota:</strong> Esta reservación está fuera del horario establecido y requiere aprobación manual.
+                                            </div>
+                                          </div>
+                                        </div>
+                                      }
+                                    </div>
+                                  </div>
+
+                                  <div class="flex space-x-2 ml-4">
+                                    @if (reservation.status === 'pending') {
+                                      <button (click)="approveReservation(reservation.id)"
+                                              class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                        Aprobar
+                                      </button>
+                                    }
+                                    @if (reservation.status !== 'cancelled') {
+                                      <button (click)="openEditModal(reservation)"
+                                              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                        Editar
+                                      </button>
+                                    }
+                                    @if (reservation.status !== 'cancelled') {
+                                      <button (click)="openCancelModal(reservation)"
+                                              class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                        Cancelar
+                                      </button>
+                                    }
+                                  </div>
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        }
                       </div>
-                      
-                      <div class="flex space-x-2 ml-4">
-                        <button *ngIf="reservation.status === 'pending'" 
-                                (click)="approveReservation(reservation.id)"
-                                class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors">
-                          Aprobar
-                        </button>
-                        <button *ngIf="reservation.status !== 'cancelled'" 
-                                (click)="openEditModal(reservation)"
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors">
-                          Editar
-                        </button>
-                        <button *ngIf="reservation.status !== 'cancelled'" 
-                                (click)="openCancelModal(reservation)"
-                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors">
-                          Cancelar
-                        </button>
-                      </div>
-                    </div>
+                    }
                   </div>
-                </div>
+                }
               </div>
-            </div>
+            }
           </div>
         </div>
 
         <!-- Empty State -->
-        <div *ngIf="!loading && groupedReservations.length === 0" class="text-center py-8 text-gray-500">
-          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-          </svg>
-          <p class="mt-2">No se encontraron reservaciones con los filtros actuales.</p>
-        </div>
+        @if (!loading && groupedReservations.length === 0) {
+          <div class="text-center py-8 text-gray-500">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+            </svg>
+            <p class="mt-2">No se encontraron reservaciones con los filtros actuales.</p>
+          </div>
+        }
       </div>
     </div>
 
     <!-- Cancel Reservation Modal -->
-    <div *ngIf="showCancelModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div class="mt-3">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900">Cancelar Reservación</h3>
-            <button (click)="closeCancelModal()" class="text-gray-400 hover:text-gray-600" title="Cerrar">
-              <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-
-          <div *ngIf="selectedReservation" class="mb-4 p-3 bg-gray-50 rounded">
-            <p class="text-sm text-gray-600"><strong>Espacio:</strong> {{ selectedReservation.space?.name }}</p>
-            <p class="text-sm text-gray-600" *ngIf="selectedReservation.user"><strong>Profesional:</strong> {{ selectedReservation.user.name }} {{ selectedReservation.user.lastName }}</p>
-            <p class="text-sm text-gray-600" *ngIf="selectedReservation.external_client"><strong>Cliente Externo:</strong> {{ selectedReservation.external_client.name }}</p>
-            <p class="text-sm text-gray-600"><strong>Fecha:</strong> {{ formatDateTime(selectedReservation.start_time) }}</p>
-          </div>
-
-          <form [formGroup]="cancelForm" (ngSubmit)="cancelReservation()">
-            <div class="mb-4">
-              <label for="reason" class="block text-sm font-medium text-gray-700 mb-2">
-                Motivo de Cancelación *
-              </label>
-              <select 
-                id="reason"
-                formControlName="reason"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">Seleccionar motivo</option>
-                <option value="user_request">Solicitud del usuario</option>
-                <option value="admin_decision">Decisión administrativa</option>
-                <option value="space_unavailable">Espacio no disponible</option>
-                <option value="emergency">Emergencia</option>
-                <option value="other">Otro</option>
-              </select>
-            </div>
-
-            <div class="mb-4">
-              <label for="penalty" class="block text-sm font-medium text-gray-700 mb-2">
-                Penalización (créditos)
-              </label>
-              <input 
-                type="number"
-                id="penalty"
-                formControlName="penalty"
-                min="0"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-
-            <div class="mb-4">
-              <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
-                Notas Adicionales
-              </label>
-              <textarea 
-                id="notes"
-                formControlName="notes"
-                rows="3"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Notas opcionales sobre la cancelación..."></textarea>
-            </div>
-
-            <div class="flex justify-end space-x-3">
-              <button 
-                type="button"
-                (click)="closeCancelModal()"
-                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                Cancelar
-              </button>
-              <button 
-                type="submit"
-                [disabled]="cancelForm.invalid"
-                class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 disabled:opacity-50">
-                Confirmar Cancelación
+    @if (showCancelModal) {
+      <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-medium text-gray-900">Cancelar Reservación</h3>
+              <button (click)="closeCancelModal()" class="text-gray-400 hover:text-gray-600" title="Cerrar">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
               </button>
             </div>
-          </form>
-        </div>
-      </div>
-    </div>
 
-    <!-- Edit Reservation Modal -->
-    <div *ngIf="showEditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div class="relative top-10 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
-        <div class="mt-3">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900">Editar Reservación</h3>
-            <button (click)="closeEditModal()" class="text-gray-400 hover:text-gray-600">
-              <span class="sr-only">Cerrar</span>
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          <form [formGroup]="editForm" (ngSubmit)="updateReservation()">
-            <!-- Date Selection -->
-            <div class="mb-6">
-              <label for="edit-date" class="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
-              <input type="date" id="edit-date" formControlName="date" 
-                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-
-            <!-- Available Spaces -->
-            <div class="mb-6" *ngIf="selectedEditDate">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Consultorios Disponibles</label>
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                <div *ngFor="let space of availableSpaces" 
-                     (click)="editForm.patchValue({space_id: space.id})"
-                     [class]="'p-3 border rounded-lg cursor-pointer transition-colors ' + 
-                             (editForm.get('space_id')?.value == space.id ? 
-                              'border-blue-500 bg-blue-50' : 
-                              'border-gray-300 hover:border-gray-400')">
-                  <div class="font-medium text-gray-900">{{ space.name }}</div>
-                  <div class="text-sm text-gray-500">{{ space.cost_credits }} créditos/hora</div>
-                </div>
+            @if (selectedReservation) {
+              <div class="mb-4 p-3 bg-gray-50 rounded">
+                <p class="text-sm text-gray-600"><strong>Espacio:</strong> {{ selectedReservation.space?.name }}</p>
+                @if (selectedReservation.user) {
+                  <p class="text-sm text-gray-600"><strong>Profesional:</strong> {{ selectedReservation.user.name }} {{ selectedReservation.user.lastName }}</p>
+                }
+                @if (selectedReservation.external_client) {
+                  <p class="text-sm text-gray-600"><strong>Cliente Externo:</strong> {{ selectedReservation.external_client.name }}</p>
+                }
+                <p class="text-sm text-gray-600"><strong>Fecha:</strong> {{ formatDateTime(selectedReservation.start_time) }}</p>
               </div>
-              <div *ngIf="availableSpaces.length === 0" class="text-gray-500 text-sm mt-2">
-                No hay consultorios disponibles para esta fecha.
-              </div>
-            </div>
+            }
 
-            <!-- Available Time Slots -->
-            <div class="mb-6" *ngIf="selectedEditSpaceId && availableTimeSlots.length > 0">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Horarios Disponibles</label>
-              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                <button type="button"
-                        *ngFor="let timeSlot of availableTimeSlots"
-                        (click)="selectTimeSlot(timeSlot)"
-                        [disabled]="!timeSlot.isAvailable"
-                        [class]="'p-2 text-sm rounded border transition-colors ' + 
-                                (timeSlot.isSelected ? 
-                                 'bg-blue-500 text-white border-blue-500' : 
-                                 timeSlot.isAvailable ? 
-                                 'bg-green-50 text-green-700 border-green-300 hover:bg-green-100' : 
-                                 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed')">
-                  {{ timeSlot.timeLabel }}
+            <form [formGroup]="cancelForm" (ngSubmit)="cancelReservation()">
+              <div class="mb-4">
+                <label for="reason" class="block text-sm font-medium text-gray-700 mb-2">
+                  Motivo de Cancelación *
+                </label>
+                <select 
+                  id="reason"
+                  formControlName="reason"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">Seleccionar motivo</option>
+                  <option value="user_request">Solicitud del usuario</option>
+                  <option value="admin_decision">Decisión administrativa</option>
+                  <option value="space_unavailable">Espacio no disponible</option>
+                  <option value="emergency">Emergencia</option>
+                  <option value="other">Otro</option>
+                </select>
+              </div>
+
+              <div class="mb-4">
+                <label for="penalty" class="block text-sm font-medium text-gray-700 mb-2">
+                  Penalización (créditos)
+                </label>
+                <input 
+                  type="number"
+                  id="penalty"
+                  formControlName="penalty"
+                  min="0"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+
+              <div class="mb-4">
+                <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
+                  Notas Adicionales
+                </label>
+                <textarea 
+                  id="notes"
+                  formControlName="notes"
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Notas opcionales sobre la cancelación..."></textarea>
+              </div>
+
+              <div class="flex justify-end space-x-3">
+                <button 
+                  type="button"
+                  (click)="closeCancelModal()"
+                  class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  [disabled]="cancelForm.invalid"
+                  class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 disabled:opacity-50">
+                  Confirmar Cancelación
                 </button>
               </div>
-            </div>
-
-            <!-- Manual Time Input (fallback) -->
-            <div class="mb-6" *ngIf="editForm.get('space_id')?.value && availableTimeSlots.length === 0">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label for="edit-start-time" class="block text-sm font-medium text-gray-700 mb-1">Hora de inicio</label>
-                  <input type="time" id="edit-start-time" formControlName="start_time" 
-                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                  <label for="edit-end-time" class="block text-sm font-medium text-gray-700 mb-1">Hora de fin</label>
-                  <input type="time" id="edit-end-time" formControlName="end_time" 
-                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-              </div>
-            </div>
-
-            <!-- Notes -->
-            <div class="mb-6">
-              <label for="edit-notes" class="block text-sm font-medium text-gray-700 mb-1">Notas</label>
-              <textarea id="edit-notes" formControlName="notes" rows="3" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                        placeholder="Notas adicionales..."></textarea>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex justify-end space-x-3">
-              <button type="button" (click)="closeEditModal()" 
-                      class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
-                Cancelar
-              </button>
-              <button type="submit" [disabled]="editForm.invalid || loading" 
-                      class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
-                <span *ngIf="loading" class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
-                Actualizar Reservación
-              </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
-    </div>
+    }
+
+    <!-- Edit Reservation Modal -->
+    @if (showEditModal) {
+      <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-10 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
+          <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-medium text-gray-900">Editar Reservación</h3>
+              <button (click)="closeEditModal()" class="text-gray-400 hover:text-gray-600">
+                <span class="sr-only">Cerrar</span>
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            @if (editError) {
+              <div class="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+                {{ editError }}
+              </div>
+            }
+
+            <form [formGroup]="editForm" (ngSubmit)="updateReservation()">
+              <!-- Date Selection -->
+              <div class="mb-6">
+                <label for="edit-date" class="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
+                <input type="date" id="edit-date" formControlName="date" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+
+              <!-- Available Spaces -->
+              @if (selectedEditDate) {
+                <div class="mb-6">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Consultorios Disponibles</label>
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    @for (space of availableSpaces; track space.id) {
+                      <div (click)="editForm.patchValue({space_id: space.id})"
+                           [class]="'p-3 border rounded-lg cursor-pointer transition-colors ' + 
+                                   (editForm.get('space_id')?.value == space.id ? 
+                                    'border-blue-500 bg-blue-50' : 
+                                    'border-gray-300 hover:border-gray-400')">
+                        <div class="font-medium text-gray-900">{{ space.name }}</div>
+                        <div class="text-sm text-gray-500">{{ space.cost_credits }} créditos/hora</div>
+                      </div>
+                    }
+                  </div>
+                  @if (availableSpaces.length === 0) {
+                    <div class="text-gray-500 text-sm mt-2">
+                      No hay consultorios disponibles para esta fecha.
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Availability Loading/Error -->
+              @if (selectedEditSpaceId) {
+                @if (availabilityLoading) {
+                  <div class="mb-4 flex items-center text-sm text-blue-700 bg-blue-50 border border-blue-100 px-3 py-2 rounded">
+                    <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Consultando disponibilidad...
+                  </div>
+                }
+
+                @if (availabilityError) {
+                  <div class="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
+                    {{ availabilityError }}
+                  </div>
+                }
+              }
+
+              <!-- Available Time Slots -->
+              @if (selectedEditSpaceId && availableTimeSlots.length > 0) {
+                <div class="mb-6">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Horarios Disponibles</label>
+                  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    @for (timeSlot of availableTimeSlots; track timeSlot.hour) {
+                      <button type="button"
+                              (click)="selectTimeSlot(timeSlot)"
+                              [disabled]="!timeSlot.isAvailable"
+                              [title]="timeSlot.conflictReason || null"
+                              [class]="'p-2 text-sm rounded border transition-colors ' + 
+                                      (timeSlot.isSelected ? 
+                                       'bg-blue-500 text-white border-blue-500' : 
+                                       timeSlot.isAvailable ? 
+                                       'bg-green-50 text-green-700 border-green-300 hover:bg-green-100' : 
+                                       'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed')">
+                        <div>{{ timeSlot.timeLabel }}</div>
+                        @if (timeSlot.conflictReason) {
+                          <div class="text-xs text-gray-500 mt-1">{{ timeSlot.conflictReason }}</div>
+                        }
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Manual Time Input (fallback) -->
+              @if (editForm.get('space_id')?.value && availableTimeSlots.length === 0 && !availabilityLoading) {
+                <div class="mb-6">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label for="edit-start-time" class="block text-sm font-medium text-gray-700 mb-1">Hora de inicio</label>
+                      <input type="time" id="edit-start-time" formControlName="start_time" 
+                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                      <label for="edit-end-time" class="block text-sm font-medium text-gray-700 mb-1">Hora de fin</label>
+                      <input type="time" id="edit-end-time" formControlName="end_time" 
+                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <!-- Notes -->
+              <div class="mb-6">
+                <label for="edit-notes" class="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+                <textarea id="edit-notes" formControlName="notes" rows="3" 
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                          placeholder="Notas adicionales..."></textarea>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex justify-end space-x-3 mt-6">
+                <button type="button" (click)="closeEditModal()" 
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                  Cancelar
+                </button>
+                <button type="submit" [disabled]="editForm.invalid || loading" 
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
+                  @if (loading) {
+                    <span class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+                  }
+                  Actualizar Reservación
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    }
   </div>
 </div>
